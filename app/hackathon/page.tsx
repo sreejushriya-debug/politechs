@@ -435,7 +435,7 @@ export default function HackathonPage() {
               <StaggerContainer staggerDelay={200} className="grid md:grid-cols-3 gap-8">
                 {[
                   { name: "Shriya", role: "Lead Organizer", years: "2024 & 2025", initial: "S" },
-                  { name: "Ayush", role: "Co-Organizer", years: "2024 & 2025", initial: "A" },
+                  { name: "Ayush", role: "Lead Organizer", years: "2024 & 2025", initial: "A" },
                   { name: "Yaksh", role: "Co-Organizer", years: "2024", initial: "Y" }
                 ].map((person, i) => (
                   <div key={person.name} className="stagger-item text-center group">
