@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { techTopics, getDataAvailability } from "@/data/capitol-pulse";
+import { techTopics } from "@/data/capitol-pulse";
 import { ScrollReveal } from "@/components/ScrollAnimations";
 import { AnimatedLine } from "@/components/AmbientEffects";
 
@@ -18,8 +18,42 @@ export default function CapitolPulseLanding() {
   
   useEffect(() => {
     setMounted(true);
-    // Check data availability
-    setDataStatus(getDataAvailability());
+    
+    // Fetch data availability from API routes
+    async function checkDataAvailability() {
+      try {
+        const [healthRes, membersRes, billsRes] = await Promise.all([
+          fetch('/api/capitol-pulse/health'),
+          fetch('/api/capitol-pulse/members'),
+          fetch('/api/capitol-pulse/bills')
+        ]);
+        
+        const health = await healthRes.json();
+        const members = await membersRes.json();
+        const bills = await billsRes.json();
+        
+        setDataStatus({
+          hasApiKey: health.hasApiKey && health.available,
+          membersCount: members.members?.length || 0,
+          billsCount: bills.bills?.length || 0,
+          statementsCount: 0, // Statements not yet implemented
+          message: health.available 
+            ? `Connected to Congress.gov API` 
+            : health.message || "API not available"
+        });
+      } catch (error) {
+        console.error("Failed to check data availability:", error);
+        setDataStatus({
+          hasApiKey: false,
+          membersCount: 0,
+          billsCount: 0,
+          statementsCount: 0,
+          message: "Failed to connect to API"
+        });
+      }
+    }
+    
+    checkDataAvailability();
   }, []);
 
   const formattedDate = mounted ? new Date().toLocaleDateString("en-US", {
