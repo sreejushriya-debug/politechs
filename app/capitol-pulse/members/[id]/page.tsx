@@ -1,31 +1,67 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
-import { 
-  congressMembers, 
-  getStatementsByMember,
-  bills,
-  memberAlignments,
-  techTopics
-} from "@/data/capitol-pulse";
+import { useState, useEffect } from "react";
+import { techTopics } from "@/data/capitol-pulse";
+import { getMemberById, getStatementsByMember, getBillsByTopic } from "@/lib/capitol-pulse/data-store";
+import { CongressMember, Statement, Bill, TechTopic } from "@/lib/capitol-pulse/types";
 import { ScrollReveal } from "@/components/ScrollAnimations";
 
 export default function MemberProfilePage() {
   const params = useParams();
-  const memberId = params.id as string;
+  const bioguideId = params.id as string;
   
-  const member = congressMembers.find(m => m.id === memberId);
-  const statements = getStatementsByMember(memberId);
-  const sponsoredBills = bills.filter(b => b.sponsors.includes(memberId) || b.cosponsors.includes(memberId));
-  const alignments = memberAlignments.filter(a => a.memberId === memberId);
+  const [loading, setLoading] = useState(true);
+  const [member, setMember] = useState<CongressMember | null>(null);
+  const [statements, setStatements] = useState<Statement[]>([]);
+  const [sponsoredBills, setSponsoredBills] = useState<Bill[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const memberData = await getMemberById(bioguideId);
+        setMember(memberData);
+        
+        if (memberData) {
+          const stmts = await getStatementsByMember(bioguideId);
+          setStatements(stmts);
+          
+          // Get bills would need to filter by sponsor - simplified for now
+          // In production, this would be a dedicated query
+        }
+      } catch (error) {
+        console.error("Failed to load member:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [bioguideId]);
+
+  if (loading) {
+    return (
+      <div className="pt-28 pb-24 min-h-screen">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent-blue border-t-transparent" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!member) {
     return (
       <div className="pt-28 pb-24 min-h-screen">
         <div className="mx-auto max-w-4xl px-6 text-center">
+          <span className="text-6xl mb-6 block">🔍</span>
           <h1 className="text-4xl font-display font-bold text-white mb-4">Member Not Found</h1>
-          <Link href="/capitol-pulse/members" className="text-emerald-400 hover:text-emerald-300">
+          <p className="text-white/50 mb-6">
+            This member may not be in our current database, or the bioguide ID may be incorrect.
+          </p>
+          <Link href="/capitol-pulse/members" className="text-accent-blue hover:text-accent-blue/80">
             ← Browse All Members
           </Link>
         </div>
@@ -33,13 +69,24 @@ export default function MemberProfilePage() {
     );
   }
 
-  const partyColor = member.party === "Democrat" ? "from-blue-500 to-blue-600" :
+  const partyColor = member.party === "Democratic" ? "from-blue-500 to-blue-600" :
                      member.party === "Republican" ? "from-red-500 to-red-600" :
                      "from-purple-500 to-purple-600";
 
-  const partyBg = member.party === "Democrat" ? "bg-blue-500/10 border-blue-500/20" :
+  const partyBg = member.party === "Democratic" ? "bg-blue-500/10 border-blue-500/20" :
                   member.party === "Republican" ? "bg-red-500/10 border-red-500/20" :
                   "bg-purple-500/10 border-purple-500/20";
+
+  // Get topic distribution from statements
+  const topicCounts = new Map<TechTopic, number>();
+  statements.forEach(s => {
+    s.topics.forEach(t => {
+      topicCounts.set(t, (topicCounts.get(t) || 0) + 1);
+    });
+  });
+  const topTopics = Array.from(topicCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
 
   return (
     <div className="pt-28 pb-24 min-h-screen">
@@ -47,7 +94,7 @@ export default function MemberProfilePage() {
         {/* Header */}
         <header className="mb-12">
           <ScrollReveal animation="fade-down">
-            <Link href="/capitol-pulse/members" className="text-emerald-400 hover:text-emerald-300 text-sm mb-4 inline-block">
+            <Link href="/capitol-pulse/members" className="text-accent-blue hover:text-accent-blue/80 text-sm mb-4 inline-block">
               ← All Members
             </Link>
           </ScrollReveal>
@@ -55,9 +102,23 @@ export default function MemberProfilePage() {
           <ScrollReveal animation="zoom-in" delay={100}>
             <div className="flex items-start gap-6 flex-wrap">
               {/* Avatar */}
-              <div className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${partyColor} flex items-center justify-center text-white text-3xl font-bold`}>
-                {member.name.split(" ").map(n => n[0]).join("")}
-              </div>
+              {member.imageUrl ? (
+                <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-white/10">
+                  <Image
+                    src={member.imageUrl}
+                    alt={member.name}
+                    fill
+                    className="object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${partyColor} flex items-center justify-center text-white text-3xl font-bold`}>
+                  {member.firstName[0]}{member.lastName[0]}
+                </div>
+              )}
               
               <div className="flex-1 min-w-0">
                 <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-2">
@@ -74,107 +135,61 @@ export default function MemberProfilePage() {
                 </div>
               </div>
               
-              <a 
-                href={member.officialWebsite}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 rounded-full bg-white/10 text-white text-sm hover:bg-white/20 transition-colors"
-              >
-                Official Website →
-              </a>
+              {member.officialUrl && (
+                <a 
+                  href={member.officialUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 rounded-full bg-white/10 text-white text-sm hover:bg-white/20 transition-colors"
+                >
+                  Official Website →
+                </a>
+              )}
+            </div>
+          </ScrollReveal>
+
+          {/* Official Source Notice */}
+          <ScrollReveal animation="fade-up" delay={200}>
+            <div className="mt-6 bg-white/5 rounded-xl p-4 border border-white/5">
+              <p className="text-white/50 text-sm">
+                <span className="text-accent-blue font-medium">Official ID:</span> {member.bioguideId} • 
+                <a 
+                  href={`https://bioguide.congress.gov/search/bio/${member.bioguideId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent-blue hover:underline ml-1"
+                >
+                  View Bioguide →
+                </a>
+              </p>
             </div>
           </ScrollReveal>
         </header>
 
-        {/* Tech Fingerprint */}
-        <ScrollReveal animation="fade-up" delay={150}>
-          <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-6 mb-8">
-            <h2 className="text-white font-display font-semibold text-lg mb-6">
-              Tech Policy Fingerprint
-            </h2>
-            
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {member.techFingerprint.map(fp => {
-                const topic = techTopics.find(t => t.id === fp.topic);
-                return (
-                  <Link
-                    key={fp.topic}
-                    href={`/capitol-pulse/topics/${encodeURIComponent(fp.topic)}`}
-                    className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group"
-                  >
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-2xl">{topic?.icon}</span>
-                      <span className="text-emerald-400 font-bold text-xl">{fp.score}</span>
-                    </div>
-                    <p className="text-white/70 text-sm group-hover:text-white transition-colors">
-                      {fp.topic}
-                    </p>
-                    <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full"
-                        style={{ width: `${fp.score}%` }}
-                      />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </ScrollReveal>
-
-        {/* Words vs Actions */}
-        {alignments.length > 0 && (
-          <ScrollReveal animation="fade-up" delay={200}>
+        {/* Topic Focus */}
+        {topTopics.length > 0 && (
+          <ScrollReveal animation="fade-up" delay={150}>
             <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-6 mb-8">
               <h2 className="text-white font-display font-semibold text-lg mb-6">
-                Words vs Actions
+                Tech Policy Focus
               </h2>
-              
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {alignments.map(a => {
-                  const topic = techTopics.find(t => t.id === a.topic);
-                  const alignmentColor = a.alignment === "Aligned" ? "text-emerald-400" :
-                                         a.alignment === "High Attention, Low Action" ? "text-amber-400" :
-                                         a.alignment === "Low Attention, High Action" ? "text-cyan-400" :
-                                         "text-white/40";
+              <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                {topTopics.map(([topic, count]) => {
+                  const topicInfo = techTopics.find(t => t.id === topic);
                   return (
-                    <div key={a.topic} className="p-5 rounded-xl bg-white/5 border border-white/5">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xl">{topic?.icon}</span>
-                        <span className="text-white font-medium text-sm">{a.topic}</span>
+                    <Link
+                      key={topic}
+                      href={`/capitol-pulse/topics/${encodeURIComponent(topic)}`}
+                      className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-2xl">{topicInfo?.icon}</span>
+                        <span className="text-accent-blue font-bold">{count}</span>
                       </div>
-                      
-                      <div className="space-y-2 mb-4">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-white/50">Attention</span>
-                          <span className="text-white">{a.attentionScore}</span>
-                        </div>
-                        <div className="h-1.5 bg-white/10 rounded-full">
-                          <div 
-                            className="h-full bg-amber-500 rounded-full"
-                            style={{ width: `${a.attentionScore}%` }}
-                          />
-                        </div>
-                        
-                        <div className="flex justify-between text-sm">
-                          <span className="text-white/50">Action</span>
-                          <span className="text-white">{a.actionScore}</span>
-                        </div>
-                        <div className="h-1.5 bg-white/10 rounded-full">
-                          <div 
-                            className="h-full bg-cyan-500 rounded-full"
-                            style={{ width: `${a.actionScore}%` }}
-                          />
-                        </div>
-                      </div>
-                      
-                      <p className={`text-sm font-medium mb-2 ${alignmentColor}`}>
-                        {a.alignment}
+                      <p className="text-white/70 text-sm group-hover:text-white transition-colors truncate">
+                        {topic}
                       </p>
-                      <p className="text-white/40 text-xs">
-                        {a.explanation}
-                      </p>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
@@ -188,7 +203,7 @@ export default function MemberProfilePage() {
           <ScrollReveal animation="fade-up" delay={250}>
             <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-6">
               <h2 className="text-white font-display font-semibold text-lg mb-6">
-                Recent Tech Statements
+                Tech Statements ({statements.length})
               </h2>
               
               {statements.length > 0 ? (
@@ -196,13 +211,15 @@ export default function MemberProfilePage() {
                   {statements.slice(0, 5).map(stmt => (
                     <div key={stmt.id} className="p-4 rounded-xl bg-white/5">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          stmt.tone === "Support" ? "bg-emerald-500/20 text-emerald-400" :
-                          stmt.tone === "Concern" ? "bg-amber-500/20 text-amber-400" :
-                          "bg-white/10 text-white/60"
-                        }`}>
-                          {stmt.tone}
-                        </span>
+                        {stmt.tone && (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            stmt.tone === "Support" ? "bg-emerald-500/20 text-emerald-400" :
+                            stmt.tone === "Concern" ? "bg-amber-500/20 text-amber-400" :
+                            "bg-white/10 text-white/60"
+                          }`}>
+                            {stmt.tone}
+                          </span>
+                        )}
                         <span className="text-white/30 text-xs">
                           {new Date(stmt.publishedAt).toLocaleDateString()}
                         </span>
@@ -218,34 +235,39 @@ export default function MemberProfilePage() {
                       
                       <div className="flex flex-wrap gap-1 mb-3">
                         {stmt.topics.map(t => (
-                          <span key={t} className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs">
+                          <span key={t} className="px-2 py-0.5 rounded-full bg-accent-blue/10 text-accent-blue text-xs">
                             {t}
                           </span>
                         ))}
                       </div>
                       
-                      <div className="flex justify-between items-center">
-                        <div className="flex flex-wrap gap-1">
-                          {stmt.keywords.slice(0, 3).map(k => (
-                            <span key={k} className="text-white/30 text-xs">#{k}</span>
-                          ))}
-                        </div>
-                        <a 
-                          href={stmt.sourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-emerald-400/70 hover:text-emerald-400 text-xs"
-                        >
-                          View Source →
-                        </a>
-                      </div>
+                      <a 
+                        href={stmt.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-accent-blue/70 hover:text-accent-blue text-xs"
+                      >
+                        View Source →
+                      </a>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-white/40 text-center py-8">
-                  No tech-related statements found for this member.
-                </p>
+                <div className="text-center py-8">
+                  <p className="text-white/40 mb-2">No tech-related statements found.</p>
+                  <p className="text-white/30 text-sm">
+                    Statement data is sourced from the Congressional Record.
+                  </p>
+                </div>
+              )}
+              
+              {statements.length > 5 && (
+                <Link 
+                  href={`/capitol-pulse/search?member=${bioguideId}`}
+                  className="block text-center text-accent-blue hover:text-accent-blue/80 text-sm mt-4"
+                >
+                  View All {statements.length} Statements →
+                </Link>
               )}
             </div>
           </ScrollReveal>
@@ -257,64 +279,21 @@ export default function MemberProfilePage() {
                 Tech Legislation
               </h2>
               
-              {sponsoredBills.length > 0 ? (
-                <div className="space-y-4">
-                  {sponsoredBills.map(bill => {
-                    const isSponsor = bill.sponsors.includes(memberId);
-                    return (
-                      <a
-                        key={bill.id}
-                        href={bill.congressGovUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-emerald-400 font-mono text-sm">
-                            {bill.number}
-                          </span>
-                          <div className="flex gap-2">
-                            <span className={`px-2 py-0.5 rounded-full text-xs ${
-                              isSponsor 
-                                ? "bg-emerald-500/20 text-emerald-400" 
-                                : "bg-white/10 text-white/60"
-                            }`}>
-                              {isSponsor ? "Sponsor" : "Cosponsor"}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-full text-xs ${
-                              bill.status === "Enacted" ? "bg-emerald-500/20 text-emerald-400" :
-                              bill.status.includes("Passed") ? "bg-cyan-500/20 text-cyan-400" :
-                              "bg-white/10 text-white/60"
-                            }`}>
-                              {bill.status}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <h3 className="text-white font-medium text-sm mb-2">
-                          {bill.title}
-                        </h3>
-                        
-                        <p className="text-white/50 text-xs line-clamp-2">
-                          {bill.summary}
-                        </p>
-                        
-                        <div className="flex flex-wrap gap-1 mt-3">
-                          {bill.topics.map(t => (
-                            <span key={t} className="px-2 py-0.5 rounded-full bg-white/5 text-white/50 text-xs">
-                              {techTopics.find(topic => topic.id === t)?.icon} {t.split(" ")[0]}
-                            </span>
-                          ))}
-                        </div>
-                      </a>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-white/40 text-center py-8">
-                  No tech-related bills sponsored or cosponsored by this member.
+              <div className="text-center py-8">
+                <p className="text-white/40 mb-2">Bill sponsorship data coming soon.</p>
+                <p className="text-white/30 text-sm">
+                  Will show tech-related bills sponsored and cosponsored by this member.
                 </p>
-              )}
+              </div>
+              
+              <a 
+                href={`https://www.congress.gov/member/${member.lastName.toLowerCase()}-${member.firstName.toLowerCase()}/${member.bioguideId}?q=%7B%22sponsorship%22%3A%22sponsored%22%7D`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-center text-accent-blue hover:text-accent-blue/80 text-sm mt-4"
+              >
+                View All Legislation on Congress.gov →
+              </a>
             </div>
           </ScrollReveal>
         </div>
@@ -322,13 +301,14 @@ export default function MemberProfilePage() {
         {/* Disclaimer */}
         <ScrollReveal animation="fade-up" delay={350}>
           <p className="text-white/30 text-xs text-center max-w-2xl mx-auto">
-            All data comes from official Congressional sources. Tone and framing labels are 
-            algorithmic estimates—see our <Link href="/capitol-pulse/methodology" className="text-emerald-400/70 hover:text-emerald-400">methodology</Link> for 
-            details and limitations.
+            All data comes from official Congressional sources. Member information from the 
+            <a href="https://bioguide.congress.gov" target="_blank" rel="noopener noreferrer" className="text-accent-blue/70 hover:text-accent-blue mx-1">
+              Biographical Directory
+            </a>
+            and <a href="https://api.congress.gov" target="_blank" rel="noopener noreferrer" className="text-accent-blue/70 hover:text-accent-blue mx-1">Congress.gov API</a>.
           </p>
         </ScrollReveal>
       </div>
     </div>
   );
 }
-

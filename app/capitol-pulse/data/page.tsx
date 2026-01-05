@@ -1,18 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { statements, bills, congressMembers, techTopics } from "@/data/capitol-pulse";
+import { useState, useEffect } from "react";
+import { techTopics } from "@/data/capitol-pulse";
+import { getMembers, getBills, getStatements, getCoverageMetrics } from "@/lib/capitol-pulse/data-store";
+import { CongressMember, Bill, Statement, CoverageMetrics } from "@/lib/capitol-pulse/types";
 import { ScrollReveal } from "@/components/ScrollAnimations";
 
 type DataFormat = "json" | "csv";
 type DataType = "statements" | "bills" | "members" | "all";
 
 export default function DataDownloadPage() {
+  const [loading, setLoading] = useState(true);
+  const [members, setMembers] = useState<CongressMember[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [statements, setStatements] = useState<Statement[]>([]);
+  const [coverage, setCoverage] = useState<CoverageMetrics | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string>("");
+  const [dataSource, setDataSource] = useState<string>("");
+
   const [format, setFormat] = useState<DataFormat>("json");
   const [dataType, setDataType] = useState<DataType>("all");
-  
-  const lastUpdated = new Date().toISOString().split('T')[0];
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [membersData, billsData, statementsData, coverageData] = await Promise.all([
+          getMembers(),
+          getBills(),
+          getStatements(),
+          getCoverageMetrics()
+        ]);
+        
+        setMembers(membersData.members);
+        setBills(billsData.bills);
+        setStatements(statementsData.statements);
+        setCoverage(coverageData);
+        setLastUpdated(membersData.lastUpdated);
+        setDataSource(membersData.source);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   const generateCSV = (data: Record<string, unknown>[], headers: string[]): string => {
     const csvRows = [headers.join(",")];
@@ -29,9 +62,12 @@ export default function DataDownloadPage() {
   };
 
   const handleDownload = () => {
+    if (loading) return;
+    
     let data: string;
     let filename: string;
     let mimeType: string;
+    const dateStr = new Date().toISOString().split('T')[0];
 
     if (format === "json") {
       mimeType = "application/json";
@@ -40,65 +76,67 @@ export default function DataDownloadPage() {
       if (dataType === "statements" || dataType === "all") {
         exportData.statements = statements.map(s => ({
           ...s,
-          memberName: congressMembers.find(m => m.id === s.memberId)?.name
+          memberName: members.find(m => m.bioguideId === s.bioguideId)?.name
         }));
       }
       if (dataType === "bills" || dataType === "all") {
         exportData.bills = bills.map(b => ({
           ...b,
-          sponsorNames: b.sponsors.map(id => congressMembers.find(m => m.id === id)?.name)
+          sponsorName: members.find(m => m.bioguideId === b.sponsorBioguideId)?.name
         }));
       }
       if (dataType === "members" || dataType === "all") {
-        exportData.members = congressMembers;
+        exportData.members = members;
       }
       if (dataType === "all") {
         exportData.topics = techTopics;
         exportData.exportedAt = new Date().toISOString();
+        exportData.source = dataSource;
       }
       
       data = JSON.stringify(exportData, null, 2);
-      filename = `capitol-pulse-${dataType}-${lastUpdated}.json`;
+      filename = `capitol-pulse-${dataType}-${dateStr}.json`;
     } else {
       mimeType = "text/csv";
       
       if (dataType === "statements") {
-        const headers = ["id", "title", "publishedAt", "memberName", "topics", "tone", "toneConfidence", "framings", "sourceUrl"];
+        const headers = ["id", "title", "publishedAt", "memberName", "topics", "tone", "toneConfidence", "sourceUrl", "excerpt"];
         const csvData = statements.map(s => ({
           ...s,
-          memberName: congressMembers.find(m => m.id === s.memberId)?.name
+          memberName: members.find(m => m.bioguideId === s.bioguideId)?.name
         }));
-        data = generateCSV(csvData, headers);
-        filename = `capitol-pulse-statements-${lastUpdated}.csv`;
+        data = generateCSV(csvData as unknown as Record<string, unknown>[], headers);
+        filename = `capitol-pulse-statements-${dateStr}.csv`;
       } else if (dataType === "bills") {
-        const headers = ["number", "title", "status", "introducedAt", "topics", "sponsorNames", "congressGovUrl"];
+        const headers = ["billId", "billType", "billNumber", "title", "topics", "introducedDate", "latestAction", "sponsorName", "url"];
         const csvData = bills.map(b => ({
           ...b,
-          sponsorNames: b.sponsors.map(id => congressMembers.find(m => m.id === id)?.name).join("; ")
+          sponsorName: members.find(m => m.bioguideId === b.sponsorBioguideId)?.name
         }));
-        data = generateCSV(csvData, headers);
-        filename = `capitol-pulse-bills-${lastUpdated}.csv`;
+        data = generateCSV(csvData as unknown as Record<string, unknown>[], headers);
+        filename = `capitol-pulse-bills-${dateStr}.csv`;
       } else if (dataType === "members") {
-        const headers = ["id", "name", "chamber", "party", "state", "district", "officialWebsite"];
-        data = generateCSV(congressMembers as unknown as Record<string, unknown>[], headers);
-        filename = `capitol-pulse-members-${lastUpdated}.csv`;
+        const headers = ["bioguideId", "name", "chamber", "party", "state", "district", "officialUrl"];
+        data = generateCSV(members as unknown as Record<string, unknown>[], headers);
+        filename = `capitol-pulse-members-${dateStr}.csv`;
       } else {
-        // For 'all', create a combined JSON regardless
+        // For 'all', create a combined JSON
         const exportData = {
           statements: statements.map(s => ({
             ...s,
-            memberName: congressMembers.find(m => m.id === s.memberId)?.name
+            memberName: members.find(m => m.bioguideId === s.bioguideId)?.name
           })),
           bills: bills.map(b => ({
             ...b,
-            sponsorNames: b.sponsors.map(id => congressMembers.find(m => m.id === id)?.name)
+            sponsorName: members.find(m => m.bioguideId === b.sponsorBioguideId)?.name
           })),
-          members: congressMembers,
+          members: members,
           topics: techTopics,
-          exportedAt: new Date().toISOString()
+          exportedAt: new Date().toISOString(),
+          source: dataSource
         };
         data = JSON.stringify(exportData, null, 2);
-        filename = `capitol-pulse-all-${lastUpdated}.json`;
+        filename = `capitol-pulse-all-${dateStr}.json`;
         mimeType = "application/json";
       }
     }
@@ -114,13 +152,20 @@ export default function DataDownloadPage() {
     URL.revokeObjectURL(url);
   };
 
+  const hasData = members.length > 0 || bills.length > 0 || statements.length > 0;
+  const formattedDate = new Date(lastUpdated).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+
   return (
     <div className="pt-28 pb-24 min-h-screen">
       <div className="mx-auto max-w-4xl px-6">
         {/* Header */}
         <header className="mb-12">
           <ScrollReveal animation="fade-down">
-            <Link href="/capitol-pulse" className="text-emerald-400 hover:text-emerald-300 text-sm mb-4 inline-block">
+            <Link href="/capitol-pulse" className="text-accent-blue hover:text-accent-blue/80 text-sm mb-4 inline-block">
               ← Back to Capitol Pulse
             </Link>
           </ScrollReveal>
@@ -139,224 +184,260 @@ export default function DataDownloadPage() {
           </ScrollReveal>
         </header>
 
-        {/* Download Card */}
-        <ScrollReveal animation="fade-up" delay={100}>
-          <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-8 mb-8">
-            <h2 className="text-xl font-display font-bold text-white mb-6">
-              Export Options
-            </h2>
-            
-            <div className="grid sm:grid-cols-2 gap-6 mb-8">
-              {/* Data Type */}
-              <div>
-                <label className="text-white/50 text-sm mb-3 block">What to Export</label>
-                <div className="space-y-2">
-                  {[
-                    { value: "all", label: "Everything", desc: "Statements, bills, members, topics" },
-                    { value: "statements", label: "Statements Only", desc: "Press releases with tags" },
-                    { value: "bills", label: "Bills Only", desc: "Legislation with sponsors" },
-                    { value: "members", label: "Members Only", desc: "Congress member directory" }
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setDataType(opt.value as DataType)}
-                      className={`w-full p-4 rounded-xl text-left transition-all ${
-                        dataType === opt.value 
-                          ? "bg-emerald-500/20 border-2 border-emerald-500/50" 
-                          : "bg-white/5 border-2 border-transparent hover:bg-white/10"
-                      }`}
-                    >
-                      <p className="text-white font-medium">{opt.label}</p>
-                      <p className="text-white/40 text-sm">{opt.desc}</p>
-                    </button>
-                  ))}
-                </div>
+        {/* Data Status */}
+        <ScrollReveal animation="fade-up">
+          <div className={`rounded-xl border p-4 mb-8 ${
+            hasData ? "bg-emerald-500/10 border-emerald-500/20" : "bg-amber-500/10 border-amber-500/20"
+          }`}>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-2.5 h-2.5 rounded-full ${hasData ? "bg-emerald-500" : "bg-amber-500"}`} />
+                <span className={`text-sm font-medium ${hasData ? "text-emerald-400" : "text-amber-400"}`}>
+                  {dataSource}
+                </span>
               </div>
-              
-              {/* Format */}
-              <div>
-                <label className="text-white/50 text-sm mb-3 block">Format</label>
-                <div className="space-y-2">
-                  <button
-                    onClick={() => setFormat("json")}
-                    className={`w-full p-4 rounded-xl text-left transition-all ${
-                      format === "json" 
-                        ? "bg-emerald-500/20 border-2 border-emerald-500/50" 
-                        : "bg-white/5 border-2 border-transparent hover:bg-white/10"
-                    }`}
-                  >
-                    <p className="text-white font-medium">JSON</p>
-                    <p className="text-white/40 text-sm">Best for developers & APIs</p>
-                  </button>
+              <span className="text-white/40 text-sm">
+                Updated: {formattedDate}
+              </span>
+            </div>
+          </div>
+        </ScrollReveal>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent-blue border-t-transparent" />
+          </div>
+        ) : !hasData ? (
+          <ScrollReveal animation="fade-up">
+            <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-12 text-center">
+              <span className="text-6xl mb-6 block">📥</span>
+              <h2 className="text-2xl font-display font-bold text-white mb-4">
+                No Data Available
+              </h2>
+              <p className="text-white/50 max-w-lg mx-auto mb-6">
+                Connect to official data sources to enable data downloads.
+                Data exports include official source URLs for all records.
+              </p>
+              <Link 
+                href="/capitol-pulse/methodology"
+                className="text-accent-blue hover:text-accent-blue/80"
+              >
+                Learn how to connect →
+              </Link>
+            </div>
+          </ScrollReveal>
+        ) : (
+          <>
+            {/* Download Card */}
+            <ScrollReveal animation="fade-up" delay={100}>
+              <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-8 mb-8">
+                <h2 className="text-xl font-display font-bold text-white mb-6">
+                  Export Options
+                </h2>
+                
+                <div className="grid sm:grid-cols-2 gap-6 mb-8">
+                  {/* Data Type */}
+                  <div>
+                    <label className="text-white/50 text-sm mb-3 block">What to Export</label>
+                    <div className="space-y-2">
+                      {[
+                        { value: "all", label: "Everything", desc: "Statements, bills, members, topics" },
+                        { value: "statements", label: "Statements Only", desc: "Congressional Record excerpts" },
+                        { value: "bills", label: "Bills Only", desc: "Tech legislation from Congress.gov" },
+                        { value: "members", label: "Members Only", desc: "Current Congress roster" }
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setDataType(opt.value as DataType)}
+                          className={`w-full p-4 rounded-xl text-left transition-all ${
+                            dataType === opt.value 
+                              ? "bg-accent-blue/20 border-2 border-accent-blue/50" 
+                              : "bg-white/5 border-2 border-transparent hover:bg-white/10"
+                          }`}
+                        >
+                          <p className="text-white font-medium">{opt.label}</p>
+                          <p className="text-white/40 text-sm">{opt.desc}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   
-                  <button
-                    onClick={() => setFormat("csv")}
-                    className={`w-full p-4 rounded-xl text-left transition-all ${
-                      format === "csv" 
-                        ? "bg-emerald-500/20 border-2 border-emerald-500/50" 
-                        : "bg-white/5 border-2 border-transparent hover:bg-white/10"
-                    }`}
-                  >
-                    <p className="text-white font-medium">CSV</p>
-                    <p className="text-white/40 text-sm">Best for Excel & spreadsheets</p>
-                  </button>
+                  {/* Format */}
+                  <div>
+                    <label className="text-white/50 text-sm mb-3 block">Format</label>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setFormat("json")}
+                        className={`w-full p-4 rounded-xl text-left transition-all ${
+                          format === "json" 
+                            ? "bg-accent-blue/20 border-2 border-accent-blue/50" 
+                            : "bg-white/5 border-2 border-transparent hover:bg-white/10"
+                        }`}
+                      >
+                        <p className="text-white font-medium">JSON</p>
+                        <p className="text-white/40 text-sm">Best for developers & APIs</p>
+                      </button>
+                      
+                      <button
+                        onClick={() => setFormat("csv")}
+                        className={`w-full p-4 rounded-xl text-left transition-all ${
+                          format === "csv" 
+                            ? "bg-accent-blue/20 border-2 border-accent-blue/50" 
+                            : "bg-white/5 border-2 border-transparent hover:bg-white/10"
+                        }`}
+                      >
+                        <p className="text-white font-medium">CSV</p>
+                        <p className="text-white/40 text-sm">Best for Excel & spreadsheets</p>
+                      </button>
+                    </div>
+                    
+                    {dataType === "all" && format === "csv" && (
+                      <p className="text-amber-400/80 text-xs mt-3">
+                        Note: "Everything" export uses JSON format regardless of selection.
+                      </p>
+                    )}
+                  </div>
                 </div>
                 
-                {dataType === "all" && format === "csv" && (
-                  <p className="text-amber-400/80 text-xs mt-3">
-                    Note: "Everything" export uses JSON format regardless of selection.
-                  </p>
-                )}
+                {/* Download Button */}
+                <button
+                  onClick={handleDownload}
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-accent-blue to-accent-red text-white font-bold text-lg hover:shadow-[0_0_40px_rgba(59,130,246,0.4)] transition-all duration-500 hover:scale-[1.02]"
+                >
+                  Download {dataType === "all" ? "All Data" : dataType.charAt(0).toUpperCase() + dataType.slice(1)} ({format.toUpperCase()})
+                </button>
               </div>
-            </div>
-            
-            {/* Download Button */}
-            <button
-              onClick={handleDownload}
-              className="w-full py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold text-lg hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] transition-all duration-500 hover:scale-[1.02]"
-            >
-              Download {dataType === "all" ? "All Data" : dataType.charAt(0).toUpperCase() + dataType.slice(1)} ({format.toUpperCase()})
-            </button>
-          </div>
-        </ScrollReveal>
+            </ScrollReveal>
 
-        {/* Data Summary */}
-        <ScrollReveal animation="fade-up" delay={200}>
-          <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-8 mb-8">
-            <h2 className="text-xl font-display font-bold text-white mb-6">
-              What's Included
-            </h2>
-            
-            <div className="grid sm:grid-cols-3 gap-4 mb-6">
-              <div className="text-center p-4 rounded-xl bg-white/5">
-                <p className="text-3xl font-display font-bold text-emerald-400">{statements.length}</p>
-                <p className="text-white/40 text-sm">Statements</p>
+            {/* Data Summary */}
+            <ScrollReveal animation="fade-up" delay={200}>
+              <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-8 mb-8">
+                <h2 className="text-xl font-display font-bold text-white mb-6">
+                  What's Included
+                </h2>
+                
+                <div className="grid sm:grid-cols-3 gap-4 mb-6">
+                  <div className="text-center p-4 rounded-xl bg-white/5">
+                    <p className="text-3xl font-display font-bold text-accent-blue">{statements.length}</p>
+                    <p className="text-white/40 text-sm">Statements</p>
+                  </div>
+                  <div className="text-center p-4 rounded-xl bg-white/5">
+                    <p className="text-3xl font-display font-bold text-accent-red">{bills.length}</p>
+                    <p className="text-white/40 text-sm">Bills</p>
+                  </div>
+                  <div className="text-center p-4 rounded-xl bg-white/5">
+                    <p className="text-3xl font-display font-bold text-purple-400">{members.length}</p>
+                    <p className="text-white/40 text-sm">Members</p>
+                  </div>
+                </div>
+                
+                <p className="text-white/40 text-sm text-center">
+                  Data source: {dataSource}
+                </p>
               </div>
-              <div className="text-center p-4 rounded-xl bg-white/5">
-                <p className="text-3xl font-display font-bold text-cyan-400">{bills.length}</p>
-                <p className="text-white/40 text-sm">Bills</p>
-              </div>
-              <div className="text-center p-4 rounded-xl bg-white/5">
-                <p className="text-3xl font-display font-bold text-purple-400">{congressMembers.length}</p>
-                <p className="text-white/40 text-sm">Members</p>
-              </div>
-            </div>
-            
-            <p className="text-white/40 text-sm text-center">
-              Last updated: {lastUpdated}
-            </p>
-          </div>
-        </ScrollReveal>
+            </ScrollReveal>
 
-        {/* Schema Documentation */}
-        <ScrollReveal animation="fade-up" delay={250}>
-          <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-8 mb-8">
-            <h2 className="text-xl font-display font-bold text-white mb-6">
-              Data Schema
-            </h2>
-            
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-emerald-400 font-mono text-sm mb-2">Statement Object</h3>
-                <pre className="bg-black/30 rounded-xl p-4 text-white/70 text-sm overflow-x-auto">
+            {/* Schema Documentation */}
+            <ScrollReveal animation="fade-up" delay={250}>
+              <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-8 mb-8">
+                <h2 className="text-xl font-display font-bold text-white mb-6">
+                  Data Schema
+                </h2>
+                
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-accent-blue font-mono text-sm mb-2">Statement Object</h3>
+                    <pre className="bg-black/30 rounded-xl p-4 text-white/70 text-sm overflow-x-auto">
 {`{
   "id": "string",
-  "memberId": "string",
+  "bioguideId": "string",
   "memberName": "string",
   "title": "string",
   "excerpt": "string",
-  "sourceUrl": "string",
+  "sourceUrl": "https://...",
+  "sourceType": "congressional_record" | "press_release",
   "publishedAt": "YYYY-MM-DD",
   "topics": ["AI & Automation", ...],
   "tone": "Support" | "Concern" | "Neutral",
   "toneConfidence": 0-100,
-  "framings": ["Innovation", ...],
-  "keywords": ["AI", "regulation", ...],
-  "entities": ["FTC", "Section 230", ...]
+  "matchedSnippet": "text that triggered tagging"
 }`}
-                </pre>
-              </div>
-              
-              <div>
-                <h3 className="text-cyan-400 font-mono text-sm mb-2">Bill Object</h3>
-                <pre className="bg-black/30 rounded-xl p-4 text-white/70 text-sm overflow-x-auto">
+                    </pre>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-accent-red font-mono text-sm mb-2">Bill Object</h3>
+                    <pre className="bg-black/30 rounded-xl p-4 text-white/70 text-sm overflow-x-auto">
 {`{
-  "id": "string",
-  "number": "S.1234 | H.R.5678",
+  "billId": "119-hr-123",
+  "congress": 119,
+  "billType": "hr" | "s",
+  "billNumber": 123,
   "title": "string",
   "summary": "string",
   "topics": ["Cybersecurity", ...],
-  "introducedAt": "YYYY-MM-DD",
-  "status": "Introduced" | "In Committee" | ...,
-  "sponsors": ["member-id", ...],
-  "sponsorNames": ["Name", ...],
-  "congressGovUrl": "https://..."
+  "introducedDate": "YYYY-MM-DD",
+  "latestAction": "string",
+  "sponsorBioguideId": "W000805",
+  "sponsorName": "Mark Warner",
+  "cosponsorCount": 12,
+  "url": "https://congress.gov/...",
+  "matchedSubjects": ["Computer security", ...]
 }`}
-                </pre>
-              </div>
-              
-              <div>
-                <h3 className="text-purple-400 font-mono text-sm mb-2">Member Object</h3>
-                <pre className="bg-black/30 rounded-xl p-4 text-white/70 text-sm overflow-x-auto">
+                    </pre>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-purple-400 font-mono text-sm mb-2">Member Object</h3>
+                    <pre className="bg-black/30 rounded-xl p-4 text-white/70 text-sm overflow-x-auto">
 {`{
-  "id": "string",
-  "name": "string",
+  "bioguideId": "W000805",
+  "name": "Mark Warner",
+  "firstName": "Mark",
+  "lastName": "Warner",
   "chamber": "House" | "Senate",
-  "party": "Democrat" | "Republican" | "Independent",
-  "state": "CA",
-  "district": "12" | null,
-  "officialWebsite": "https://...",
-  "techFingerprint": [
-    { "topic": "AI & Automation", "score": 85 }
-  ]
+  "party": "Democratic" | "Republican" | "Independent",
+  "state": "VA",
+  "district": 12,
+  "officialUrl": "https://...",
+  "imageUrl": "https://bioguide.congress.gov/..."
 }`}
-                </pre>
+                    </pre>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </ScrollReveal>
+            </ScrollReveal>
 
-        {/* Terms of Use */}
-        <ScrollReveal animation="fade-up" delay={300}>
-          <div className="bg-gradient-to-br from-emerald-500/10 via-navy-800/50 to-cyan-500/10 rounded-2xl border border-white/5 p-8">
-            <h2 className="text-xl font-display font-bold text-white mb-4">
-              Terms of Use
-            </h2>
-            
-            <div className="space-y-4 text-white/70 text-sm">
-              <p>
-                This data is provided for research, journalism, and civic engagement purposes. 
-                By downloading, you agree to:
-              </p>
-              
-              <ul className="list-disc list-inside space-y-2 ml-4">
-                <li>Credit Capitol Pulse / Politechs as your data source</li>
-                <li>Link to our methodology page when citing classifications</li>
-                <li>Not misrepresent algorithmic estimates as definitive facts</li>
-                <li>Not use the data for harassment or targeted attacks on individuals</li>
-              </ul>
-              
-              <p className="text-white/40">
-                The underlying source data (press releases, legislation) is public record. 
-                Our value-add (classifications, scores, trends) is offered under CC BY-NC 4.0.
-              </p>
-            </div>
-          </div>
-        </ScrollReveal>
-
-        {/* API Coming Soon */}
-        <ScrollReveal animation="fade-up" delay={350}>
-          <div className="mt-8 text-center">
-            <p className="text-white/40 text-sm mb-2">
-              Need programmatic access?
-            </p>
-            <p className="text-white/60">
-              API access coming soon. <Link href="mailto:contact@politechs.org" className="text-emerald-400 hover:text-emerald-300">Contact us</Link> for early access.
-            </p>
-          </div>
-        </ScrollReveal>
+            {/* Terms of Use */}
+            <ScrollReveal animation="fade-up" delay={300}>
+              <div className="bg-gradient-to-br from-accent-blue/10 via-navy-800/50 to-accent-red/10 rounded-2xl border border-white/5 p-8">
+                <h2 className="text-xl font-display font-bold text-white mb-4">
+                  Terms of Use
+                </h2>
+                
+                <div className="space-y-4 text-white/70 text-sm">
+                  <p>
+                    This data is provided for research, journalism, and civic engagement purposes. 
+                    By downloading, you agree to:
+                  </p>
+                  
+                  <ul className="list-disc list-inside space-y-2 ml-4">
+                    <li>Credit Capitol Pulse / Politechs as your data source</li>
+                    <li>Link to our methodology page when citing classifications</li>
+                    <li>Not misrepresent algorithmic estimates as definitive facts</li>
+                    <li>Verify official source URLs before republishing</li>
+                  </ul>
+                  
+                  <p className="text-white/40">
+                    The underlying source data (bills, Congressional Record) is public record. 
+                    Every exported record includes an official source URL for verification.
+                  </p>
+                </div>
+              </div>
+            </ScrollReveal>
+          </>
+        )}
       </div>
     </div>
   );
 }
-

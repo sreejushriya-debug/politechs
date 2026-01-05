@@ -11,7 +11,7 @@ export default function MethodologyPage() {
         {/* Header */}
         <header className="mb-12">
           <ScrollReveal animation="fade-down">
-            <Link href="/capitol-pulse" className="text-emerald-400 hover:text-emerald-300 text-sm mb-4 inline-block">
+            <Link href="/capitol-pulse" className="text-accent-blue hover:text-accent-blue/80 text-sm mb-4 inline-block">
               ← Back to Capitol Pulse
             </Link>
           </ScrollReveal>

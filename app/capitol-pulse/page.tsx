@@ -2,19 +2,27 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { weeklySnapshot, techTopics, statements, bills } from "@/data/capitol-pulse";
+import { techTopics, getDataAvailability } from "@/data/capitol-pulse";
 import { ScrollReveal } from "@/components/ScrollAnimations";
 import { AnimatedLine } from "@/components/AmbientEffects";
 
 export default function CapitolPulseLanding() {
   const [mounted, setMounted] = useState(false);
+  const [dataStatus, setDataStatus] = useState<{
+    hasApiKey: boolean;
+    membersCount: number;
+    billsCount: number;
+    statementsCount: number;
+    message: string;
+  } | null>(null);
   
   useEffect(() => {
     setMounted(true);
+    // Check data availability
+    setDataStatus(getDataAvailability());
   }, []);
 
-  const lastUpdated = new Date(weeklySnapshot.lastUpdated);
-  const formattedDate = mounted ? lastUpdated.toLocaleDateString("en-US", {
+  const formattedDate = mounted ? new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -23,22 +31,17 @@ export default function CapitolPulseLanding() {
     minute: "2-digit"
   }) : "";
 
+  const isLiveData = dataStatus?.hasApiKey && dataStatus.membersCount > 0;
+
   return (
     <div className="pt-28 pb-24 min-h-screen">
       <div className="mx-auto max-w-6xl px-6">
         {/* Hero Section */}
         <header className="text-center mb-20">
-          <ScrollReveal animation="fade-down">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-6">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-emerald-400 text-sm font-medium">Live Data from Official Sources</span>
-            </div>
-          </ScrollReveal>
-          
           <ScrollReveal animation="zoom-in" delay={100}>
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-display font-bold mb-6">
               <span className="text-white">Capitol</span>
-              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent"> Pulse</span>
+              <span className="bg-gradient-to-r from-accent-blue to-accent-red bg-clip-text text-transparent"> Pulse</span>
             </h1>
           </ScrollReveal>
           
@@ -48,7 +51,7 @@ export default function CapitolPulseLanding() {
               with every claim backed by official sources.
             </p>
             <p className="text-white/40 text-sm">
-              Official press releases • Legislation • Roll-call votes • Transparent methodology
+              Congressional Record • Legislation • Roll-call votes • Transparent methodology
             </p>
             <AnimatedLine className="w-24 mx-auto mt-8" />
           </ScrollReveal>
@@ -57,7 +60,7 @@ export default function CapitolPulseLanding() {
             <div className="flex flex-wrap justify-center gap-4 mt-10">
               <Link 
                 href="/capitol-pulse/dashboard"
-                className="px-8 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold text-lg hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] transition-all duration-500 hover:scale-105"
+                className="px-8 py-4 rounded-full bg-gradient-to-r from-accent-blue to-accent-red text-white font-bold text-lg hover:shadow-[0_0_40px_rgba(59,130,246,0.4)] transition-all duration-500 hover:scale-105"
               >
                 Explore Dashboard
               </Link>
@@ -71,7 +74,36 @@ export default function CapitolPulseLanding() {
           </ScrollReveal>
         </header>
 
-        {/* This Week Snapshot */}
+        {/* Data Status Banner */}
+        <section className="mb-12">
+          <ScrollReveal animation="fade-up">
+            <div className={`rounded-2xl border p-6 ${
+              isLiveData 
+                ? "bg-emerald-500/10 border-emerald-500/20" 
+                : "bg-amber-500/10 border-amber-500/20"
+            }`}>
+              <div className="flex items-center gap-4">
+                <div className={`w-3 h-3 rounded-full ${isLiveData ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+                <div className="flex-1">
+                  <p className={`font-medium ${isLiveData ? "text-emerald-400" : "text-amber-400"}`}>
+                    {isLiveData ? "Connected to Official Sources" : "API Configuration Required"}
+                  </p>
+                  <p className="text-white/50 text-sm">
+                    {dataStatus?.message || "Checking data availability..."}
+                  </p>
+                </div>
+                {isLiveData && dataStatus && (
+                  <div className="text-right text-sm">
+                    <p className="text-white/60">{dataStatus.membersCount} members</p>
+                    <p className="text-white/40">{dataStatus.billsCount} bills tracked</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </ScrollReveal>
+        </section>
+
+        {/* Data Sources Info */}
         <section className="mb-20">
           <ScrollReveal animation="fade-up">
             <div className="bg-gradient-to-br from-navy-800/40 to-navy-900/40 rounded-3xl border border-white/5 overflow-hidden">
@@ -79,79 +111,86 @@ export default function CapitolPulseLanding() {
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
                     <h2 className="text-2xl font-display font-bold text-white mb-1">
-                      This Week in Congress Tech
+                      Official Data Sources
                     </h2>
                     <p className="text-white/40 text-sm">
-                      Last updated: {formattedDate}
+                      Last checked: {formattedDate}
                     </p>
                   </div>
                   <Link 
-                    href="/capitol-pulse/dashboard"
-                    className="text-emerald-400 hover:text-emerald-300 text-sm font-medium flex items-center gap-1 transition-colors"
+                    href="/capitol-pulse/methodology"
+                    className="text-accent-blue hover:text-accent-blue/80 text-sm font-medium flex items-center gap-1 transition-colors"
                   >
-                    Full Dashboard →
+                    View Methodology →
                   </Link>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/5">
-                {/* Top Topics */}
+                {/* Congress.gov API */}
                 <div className="p-6">
                   <h3 className="text-white/50 text-sm font-medium uppercase tracking-wider mb-4">
-                    Trending Topics
+                    Legislation Data
                   </h3>
                   <div className="space-y-3">
-                    {weeklySnapshot.topTopics.map((item, i) => (
-                      <Link 
-                        key={item.topic}
-                        href={`/capitol-pulse/topics/${encodeURIComponent(item.topic)}`}
-                        className="flex items-center justify-between group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">
-                            {techTopics.find(t => t.id === item.topic)?.icon}
-                          </span>
-                          <span className="text-white group-hover:text-emerald-400 transition-colors">
-                            {item.topic}
-                          </span>
-                        </div>
-                        <span className={`text-sm font-medium ${
-                          item.change.startsWith("+") ? "text-emerald-400" : "text-red-400"
-                        }`}>
-                          {item.change}
-                        </span>
-                      </Link>
-                    ))}
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">📜</span>
+                      <div>
+                        <p className="text-white font-medium">Congress.gov API</p>
+                        <p className="text-white/40 text-sm">Bills, resolutions, sponsors</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🗳️</span>
+                      <div>
+                        <p className="text-white font-medium">Roll-Call Votes</p>
+                        <p className="text-white/40 text-sm">House Clerk & Senate.gov</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Notable Shifts */}
+                {/* Congressional Record */}
                 <div className="p-6">
                   <h3 className="text-white/50 text-sm font-medium uppercase tracking-wider mb-4">
-                    Notable Shifts
+                    Floor Statements
                   </h3>
-                  <ul className="space-y-3">
-                    {weeklySnapshot.notableShifts.map((shift, i) => (
-                      <li key={i} className="flex items-start gap-2 text-white/70 text-sm">
-                        <span className="text-emerald-400 mt-1">•</span>
-                        {shift}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🏛️</span>
+                      <div>
+                        <p className="text-white font-medium">Congressional Record</p>
+                        <p className="text-white/40 text-sm">Official floor speeches</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">📄</span>
+                      <div>
+                        <p className="text-white font-medium">Member Websites</p>
+                        <p className="text-white/40 text-sm">Official .gov domains only</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Key Votes */}
+                {/* Coverage Info */}
                 <div className="p-6">
                   <h3 className="text-white/50 text-sm font-medium uppercase tracking-wider mb-4">
-                    Key Votes
+                    Coverage
                   </h3>
-                  <div className="space-y-4">
-                    {weeklySnapshot.keyVotes.map((vote, i) => (
-                      <div key={i} className="bg-white/5 rounded-xl p-4">
-                        <p className="text-white font-medium text-sm mb-1">{vote.bill}</p>
-                        <p className="text-emerald-400 text-xs">{vote.result}</p>
-                      </div>
-                    ))}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/70">Members</span>
+                      <span className="text-white font-medium">{dataStatus?.membersCount || 0}/535</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/70">Tech Bills</span>
+                      <span className="text-white font-medium">{dataStatus?.billsCount || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/70">Statements</span>
+                      <span className="text-white font-medium">{dataStatus?.statementsCount || 0}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -174,11 +213,11 @@ export default function CapitolPulseLanding() {
                 description: "See how Congress discusses AI, privacy, antitrust, and 6 more tech topics over time.",
                 icon: "📊",
                 href: "/capitol-pulse/dashboard",
-                color: "from-emerald-500/20 to-cyan-500/20"
+                color: "from-blue-500/20 to-red-500/20"
               },
               {
                 title: "Member Profiles",
-                description: "Every member's tech policy fingerprint with statements, bills, and votes.",
+                description: "Every member's tech policy activity with official statements and legislation.",
                 icon: "👤",
                 href: "/capitol-pulse/members",
                 color: "from-purple-500/20 to-pink-500/20"
@@ -218,7 +257,7 @@ export default function CapitolPulseLanding() {
                   className={`block h-full bg-gradient-to-br ${feature.color} rounded-2xl p-6 border border-white/5 hover:border-white/20 transition-all duration-300 hover:scale-[1.02] group`}
                 >
                   <span className="text-4xl mb-4 block">{feature.icon}</span>
-                  <h3 className="text-white font-display font-semibold text-lg mb-2 group-hover:text-emerald-400 transition-colors">
+                  <h3 className="text-white font-display font-semibold text-lg mb-2 group-hover:text-accent-blue transition-colors">
                     {feature.title}
                   </h3>
                   <p className="text-white/50 text-sm leading-relaxed">
@@ -237,7 +276,8 @@ export default function CapitolPulseLanding() {
               Technology Topics We Track
             </h2>
             <p className="text-white/50 text-center mb-12 max-w-2xl mx-auto">
-              Every statement and bill is automatically classified into these policy areas.
+              Every statement and bill is automatically classified into these policy areas 
+              using official Congress.gov subjects and keyword matching.
             </p>
           </ScrollReveal>
 
@@ -246,11 +286,11 @@ export default function CapitolPulseLanding() {
               <ScrollReveal key={topic.id} animation="fade-up" delay={i * 30}>
                 <Link
                   href={`/capitol-pulse/topics/${encodeURIComponent(topic.id)}`}
-                  className="flex items-start gap-4 p-5 rounded-xl bg-white/5 border border-white/5 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all duration-300 group"
+                  className="flex items-start gap-4 p-5 rounded-xl bg-white/5 border border-white/5 hover:border-accent-blue/30 hover:bg-accent-blue/5 transition-all duration-300 group"
                 >
                   <span className="text-3xl">{topic.icon}</span>
                   <div>
-                    <h3 className="text-white font-medium mb-1 group-hover:text-emerald-400 transition-colors">
+                    <h3 className="text-white font-medium mb-1 group-hover:text-accent-blue transition-colors">
                       {topic.name}
                     </h3>
                     <p className="text-white/40 text-sm line-clamp-2">
@@ -263,20 +303,21 @@ export default function CapitolPulseLanding() {
           </div>
         </section>
 
-        {/* Stats */}
+        {/* Stats - Now shows actual counts */}
         <section className="mb-20">
           <ScrollReveal animation="fade-up">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { label: "Members Tracked", value: "535", icon: "🏛️" },
-                { label: "Statements Analyzed", value: `${statements.length * 100}+`, icon: "📝" },
-                { label: "Bills Monitored", value: `${bills.length * 50}+`, icon: "📋" },
-                { label: "Topics Classified", value: "9", icon: "🏷️" }
+                { label: "Congress Members", value: "535", icon: "🏛️", sublabel: "House + Senate" },
+                { label: "Statements", value: dataStatus?.statementsCount?.toString() || "0", icon: "📝", sublabel: "From official sources" },
+                { label: "Tech Bills", value: dataStatus?.billsCount?.toString() || "0", icon: "📋", sublabel: "119th Congress" },
+                { label: "Topics Tracked", value: "9", icon: "🏷️", sublabel: "Policy areas" }
               ].map((stat, i) => (
                 <div key={stat.label} className="text-center p-6 rounded-2xl bg-white/5 border border-white/5">
                   <span className="text-3xl mb-2 block">{stat.icon}</span>
                   <p className="text-3xl font-display font-bold text-white mb-1">{stat.value}</p>
                   <p className="text-white/40 text-sm">{stat.label}</p>
+                  <p className="text-white/25 text-xs mt-1">{stat.sublabel}</p>
                 </div>
               ))}
             </div>
@@ -286,7 +327,7 @@ export default function CapitolPulseLanding() {
         {/* Credibility Statement */}
         <section className="mb-20">
           <ScrollReveal animation="zoom-in">
-            <div className="bg-gradient-to-br from-emerald-500/10 via-navy-800/50 to-cyan-500/10 rounded-3xl p-10 md:p-12 border border-white/5">
+            <div className="bg-gradient-to-br from-accent-blue/10 via-navy-800/50 to-accent-red/10 rounded-3xl p-10 md:p-12 border border-white/5">
               <div className="max-w-3xl mx-auto text-center">
                 <span className="text-4xl mb-4 block">🔬</span>
                 <h2 className="text-2xl md:text-3xl font-display font-bold text-white mb-4">
@@ -294,8 +335,8 @@ export default function CapitolPulseLanding() {
                 </h2>
                 <p className="text-white/60 text-lg leading-relaxed mb-6">
                   Every data point links back to its official source. We show our work—the exact excerpts 
-                  that triggered each tag, the confidence levels of our classifications, and a full 
-                  methodology page explaining what we do and don't claim.
+                  that triggered each tag, the methodology behind classifications, and a full 
+                  explanation of what we do and don't claim.
                 </p>
                 <div className="flex flex-wrap justify-center gap-4">
                   <Link 
@@ -320,12 +361,11 @@ export default function CapitolPulseLanding() {
         <ScrollReveal animation="fade-up">
           <p className="text-center text-white/30 text-sm max-w-2xl mx-auto">
             Capitol Pulse uses official Congressional sources and public records. 
-            Tone and framing classifications are algorithmic estimates—see our methodology 
-            for limitations. This tool is for research and civic engagement, not partisan advocacy.
+            Topic classifications use Congress.gov subjects and keyword matching—see our methodology 
+            for details. This tool is for research and civic engagement, not partisan advocacy.
           </p>
         </ScrollReveal>
       </div>
     </div>
   );
 }
-
