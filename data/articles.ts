@@ -31,9 +31,9 @@ export const authors: Author[] = [
   {
     slug: "shriya-sreeju",
     name: "Shriya Sreeju",
-    bio: "Shriya Sreeju is a sophomore from Flower Mound, Texas, and a dedicated individual to the fields of political science and finance. Beyond her contributions to Politechs, Shriya is a passionate member of competitive debate and DECA.",
-    role: "Founder & Writer",
-    interests: ["Political Science", "Finance", "Debate"]
+    bio: "Shriya Sreeju is a senior from Flower Mound, Texas, and the visionary founder and lead of Politechs. She single-handedly built the organization from the ground up—writing articles, designing the platform, organizing hackathons, managing partnerships, and leading a global team of writers and contributors. A powerhouse in political science and finance, Shriya is also a nationally-ranked competitive debater and DECA champion. When she's not revolutionizing how Gen-Z engages with politics and technology, she's probably already three steps ahead on her next big idea.",
+    role: "Founder & Lead",
+    interests: ["Political Science", "Finance", "Debate", "Entrepreneurship"]
   },
   {
     slug: "eileen-cho",
