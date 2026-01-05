@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const [coverage, setCoverage] = useState<CoverageMetrics | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [dataSource, setDataSource] = useState<string>("");
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const [filters, setFilters] = useState({
     topic: "All" as TechTopic | "All",
@@ -29,12 +30,18 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadData() {
       try {
+        console.log("[Capitol Pulse] Starting data fetch...");
+        
         const [membersData, billsData, statementsData, coverageData] = await Promise.all([
           getMembers(),
           getBills(),
           getStatements(),
           getCoverageMetrics()
         ]);
+        
+        console.log("[Capitol Pulse] Members:", membersData.members.length);
+        console.log("[Capitol Pulse] Bills:", billsData.bills.length);
+        console.log("[Capitol Pulse] Source:", membersData.source);
         
         setMembers(membersData.members);
         setBills(billsData.bills);
@@ -43,7 +50,8 @@ export default function DashboardPage() {
         setLastUpdated(membersData.lastUpdated);
         setDataSource(membersData.source);
       } catch (error) {
-        console.error("Failed to load data:", error);
+        console.error("[Capitol Pulse] Failed to load data:", error);
+        setFetchError(error instanceof Error ? error.message : "Unknown error");
       } finally {
         setLoading(false);
       }
@@ -138,6 +146,11 @@ export default function DashboardPage() {
               <h2 className="text-2xl font-display font-bold text-white mb-4">
                 Connect to Official Data
               </h2>
+              {fetchError && (
+                <p className="text-red-400 bg-red-500/10 p-3 rounded-lg mb-4 text-sm">
+                  Error: {fetchError}
+                </p>
+              )}
               <p className="text-white/50 max-w-lg mx-auto mb-6">
                 Capitol Pulse requires a Congress.gov API key to display real Congressional data.
                 All data comes from official government sources—no placeholders or fake data.
