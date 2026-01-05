@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
-import { techTopics, getDataAvailability } from "@/data/capitol-pulse";
-import { getMembers, getBills, getStatements, getCoverageMetrics } from "@/lib/capitol-pulse/data-store";
-import { CongressMember, Bill, Statement, TechTopic, CoverageMetrics } from "@/lib/capitol-pulse/types";
+import { techTopics } from "@/data/capitol-pulse";
+import { CongressMember, Bill, Statement, TechTopic, CoverageMetrics, TECH_TOPICS } from "@/lib/capitol-pulse/types";
 import { ScrollReveal } from "@/components/ScrollAnimations";
 
 type Chamber = "House" | "Senate" | "All";
@@ -29,26 +28,57 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function loadData() {
+      setFetchError(null);
+      
       try {
-        console.log("[Capitol Pulse] Starting data fetch...");
-        
-        const [membersData, billsData, statementsData, coverageData] = await Promise.all([
-          getMembers(),
-          getBills(),
-          getStatements(),
-          getCoverageMetrics()
+        // Directly fetch from our API routes
+        const [membersRes, billsRes] = await Promise.all([
+          fetch('/api/capitol-pulse/members'),
+          fetch('/api/capitol-pulse/bills')
         ]);
         
-        console.log("[Capitol Pulse] Members:", membersData.members.length);
-        console.log("[Capitol Pulse] Bills:", billsData.bills.length);
-        console.log("[Capitol Pulse] Source:", membersData.source);
+        if (!membersRes.ok) {
+          throw new Error(`Members API returned ${membersRes.status}`);
+        }
+        if (!billsRes.ok) {
+          throw new Error(`Bills API returned ${billsRes.status}`);
+        }
         
-        setMembers(membersData.members);
-        setBills(billsData.bills);
-        setStatements(statementsData.statements);
-        setCoverage(coverageData);
-        setLastUpdated(membersData.lastUpdated);
-        setDataSource(membersData.source);
+        const membersData = await membersRes.json();
+        const billsData = await billsRes.json();
+        
+        setMembers(membersData.members || []);
+        setBills(billsData.bills || []);
+        setStatements([]); // Statements not yet implemented
+        setLastUpdated(membersData.lastUpdated || new Date().toISOString());
+        setDataSource(membersData.source || 'Unknown');
+        
+        // Calculate coverage
+        const membersList = membersData.members || [];
+        const billsList = billsData.bills || [];
+        
+        const billsByTopic: Record<TechTopic, number> = {} as Record<TechTopic, number>;
+        for (const topic of TECH_TOPICS) {
+          billsByTopic[topic.id] = billsList.filter((b: Bill) => b.topics.includes(topic.id)).length;
+        }
+        
+        setCoverage({
+          lastUpdated: new Date().toISOString(),
+          members: {
+            total: membersList.length,
+            house: membersList.filter((m: CongressMember) => m.chamber === 'House').length,
+            senate: membersList.filter((m: CongressMember) => m.chamber === 'Senate').length,
+            withStatements: 0,
+            withBills: 0
+          },
+          bills: {
+            total: billsList.length,
+            byTopic: billsByTopic
+          },
+          votes: { total: 0, houseTotal: 0, senateTotal: 0 },
+          statements: { total: 0, congressionalRecord: 0, pressReleases: 0 }
+        });
+        
       } catch (error) {
         console.error("[Capitol Pulse] Failed to load data:", error);
         setFetchError(error instanceof Error ? error.message : "Unknown error");
