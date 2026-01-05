@@ -227,8 +227,15 @@ export const authors: Author[] = [
     slug: "omar-dahabra",
     name: "Omar Dahabra",
     bio: "Omar Dahabra is a contributing writer focused on immigration policy, civil liberties, and the intersection of corporate interests with government enforcement. His work examines the systemic implications of privatization on democratic accountability.",
-    role: "Contributing Writer",
+    role: "Capitol Commentary Writer",
     interests: ["Immigration Policy", "Civil Liberties", "Corporate Accountability"]
+  },
+  {
+    slug: "samyak-duggirala",
+    name: "Samyak Duggirala",
+    bio: "Samyak Duggirala is a contributing writer for Capitol Commentary covering U.S. foreign policy, military intervention, surveillance, and the military-industrial complex. His analysis examines the intersection of corporate interests, democratic accountability, and American imperialism.",
+    role: "Capitol Commentary Writer",
+    interests: ["Foreign Policy", "Military-Industrial Complex", "Surveillance", "Democracy"]
   }
 ];
 
@@ -347,6 +354,33 @@ Eunice Newton Foote's work laid the groundwork for amazing discoveries related t
 Her observations inspired scientists including Tyndall, Arrhenius, and Callendar, who added to her findings and organized the framework for climate science and potential threats that can be opposed to the earth. Eunice Foote's legacy lives on as a testament to the importance of interest, resilience, and scientific inquiry despite any societal boundaries.`
   },
   {
+    slug: "cc-surveillance-has-wings-now",
+    title: "Surveillance Has Wings Now",
+    subtitle: "",
+    description: "December 1, 2025  In America, our surveillance state rarely announces its next evolution with a press conference or any official announcement. Instead, it creeps forward in procurement filing and vagu...",
+    category: "Policy & Governance",
+    publishedAt: "2025-12-01",
+    authorSlug: "omar-dahabra",
+    readTime: "3 min read",
+    hasFullContent: true,
+    graphicColors: ["#7c3aed", "#3b82f6"],
+    graphicIcon: "⚖️",
+    partnership: "Capitol Commentary",
+    content: `In America, our surveillance state rarely announces its next evolution with a press conference or any official announcement. Instead, it creeps forward in procurement filing and vague "requests for information" that seem innocuous until you read the fine print. The FBI's recent request for AI-enhanced surveillance drones equipped with facial recognition, weapons detection, and mass-tracking capabilities signals one of those silent but seismic shifts. It is a blueprint for a dystopian future where aerial monitoring, even of peaceful, constitutionally protected activity, becomes unaccountable.
+
+AI-powered surveillance doesn't just expand state power; it erases any boundaries between investigation and mass monitoring of all. As Matthew Guariglia of the Electronic Frontier Foundation told The Intercept, these systems are "built to do indiscriminate mass surveillance of all people." And while the language and rhetoric of the FBI's request may invoke "public safety," history tells a different story: tools built for terrorism and crime prevention inevitably end up turned on protesters and marginalized communities.
+
+The U.S. government has repeatedly used aerial technologies to monitor political speech, often in defiance of constitutional norms. During the George Floyd protests of 2020, the DHS deployed Predator-class drones over Minneapolis, later expanding operations to at least 15 cities. The U.S. Marshals Service also used drones to record demonstrators in Washington, D.C., showing the history of this technology's use. What the FBI now seeks is not merely more drones, but drones driven by AI, systems able to identify faces, scan license plates, chart movement patterns, and detect "anomalous behavior" without any human oversight. Real-time facial recognition deployed at demonstrations, beyond having high potential for government abuse, chills participation and undermines the freedoms of association and assembly, even perceptually. The FBI's request sits atop a decade of precedent in which every new surveillance tool ends up pointed at those demanding justice rather than those committing violence.
+
+While the Bureau pitches weapon-detection AI as a safety tool, the technology's current reality is closer to science fiction than reliability. As an example, school AI weapons-detection systems repeatedly misidentified everyday objects as firearms and failed to detect actual guns in monitored environments. These systems don't just "make mistakes," they generate false alerts that escalate police encounters, creating even greater danger in communities where armed responses are already the norm. "No company has yet proven that AI firearm detection is a viable technology," as Guariglia told The Intercept. A misread shadow could trigger a police response with lethal consequences.
+
+Modern surveillance doesn't expand through sweeping new laws out in the open. It grows through quiet "mission creep", in which agencies justify new tools under narrow circumstances and gradually broaden their use. Documents obtained by The ACLU show that "public safety drone programs" at local police departments evolve into wide-ranging aerial monitoring systems deployed at parades, community gatherings, and peaceful demonstrations. New York City offers a cautionary example. The NYPD's drone flights increased 3,200% between 2019 and 2024, but faced minimal oversight and repeated uses unrelated to emergencies. The FBI's proposed AI-powered drones would accelerate this dynamic dramatically. Because they are not merely. Their interpretations, embedded with algorithmic bias, disproportionately misidentify Black, Brown, and immigrant faces.
+
+The FBI's pursuit of AI-enabled surveillance drones is not a technical upgrade; it is an authoritarian escalation. It represents a transition from human-directed monitoring to automated dystopia, where a flying camera powered by machine learning becomes the first arbiter of who is dangerous, who is suspicious, and who deserves police attention.
+
+— Omar Dahabra`
+  },
+  {
     slug: "controversies-and-dieting",
     title: "Controversies and Dieting",
     subtitle: "A Scientific Analysis of Low-Carb Diets vs Intermittent Fasting",
@@ -451,6 +485,37 @@ The global integration of cryptocurrency promises significant simplifications an
 Traditional banking methods when trading internationally involve multiple third parties and span over a few days to complete the transaction. When performing international trade, the traditional method includes bringing in a third-party financial provider certified to remove supply and payment risks from the global operations. For international transactions, the currency will have to be converted to the respective currency of the country where the transaction was sent to. This causes currency conversion issues and large amounts of fees through these international transactions.
 
 Now, with cryptocurrency, our future is promised with smooth and secure international trades and transactions. In this digital age, cryptocurrency will redefine the ways businesses engage in worldwide economic affairs, promising an enhanced alternative to traditional banking systems. The integration of this digital currency through blockchain technology fosters a more inclusive and accessible global marketplace. The future of cryptocurrency as a payment method in international trade is not just a possibility—it is an inevitable step toward a more streamlined, secure, and inclusive global economy.`
+  },
+  {
+    slug: "cc-iraq-2-0-venezuela",
+    title: "Iraq 2.0: Venezuela",
+    subtitle: "",
+    description: "November 19, 2025  The renewed escalation toward U.S. military intervention in Venezuela feels less like a fresh strategy of conflict and more like a tragic reprise of a script Washington never learne...",
+    category: "Policy & Governance",
+    publishedAt: "2025-11-19",
+    authorSlug: "omar-dahabra",
+    readTime: "4 min read",
+    hasFullContent: true,
+    graphicColors: ["#059669", "#10b981"],
+    graphicIcon: "🏛️",
+    partnership: "Capitol Commentary",
+    content: `The renewed escalation toward U.S. military intervention in Venezuela feels less like a fresh strategy of conflict and more like a tragic reprise of a script Washington never learned to stop performing, throughout the many years of the "war on terror." Official statements frame the buildup of warships and surveillance aircraft in the Caribbean as "counter-narcotics operations," yet this framing collapses under scrutiny. The United States is massing significant military power offshore, while the administration leans on rhetorical devices like "narco-terrorism" to cast Nicolás Maduro as a global menace, precisely the kind of elastic threat label that has historically smoothed America's path to war.
+
+What makes this moment so chilling is how directly it echoes the flawed assumptions that led the United States into Iraq. The Senate Intelligence Committee's Phase II findings established that the Bush administration "repeatedly presented intelligence as fact when in reality it was unsubstantiated, contradicted, or even non-existent". Those conclusions, once dismissed as partisan, are now part of the historical record. The Committee determined that the most alarming judgments in the 2002 National Intelligence Estimate were "overstated or unsupported," an indictment of the threat-inflation that became the foundation for war. To watch the same architecture of narrative-building re-emerge around Venezuela, claims of hidden criminal networks, global terror linkages, and emergency powers, is to witness history attempting, once again, to repeat its darkest mistakes.
+
+And just as in 2002, the media ecosystem is already softening the ground. During the Iraq buildup, major outlets amplified administration claims in the name of sober expertise. The New York Times itself eventually conceded its coverage "wasn't as rigorous as it should have been," acknowledging that it gave disproportionate weight to officials eager to make the case for invasion. Today's early Venezuela coverage is beginning to trace similar patterns to what we saw earlier: presenting naval deployments as routine, accepting "limited strike" language at face value, and framing escalation as a technocratic calibration rather than a pivot toward open conflict.
+
+Those who claim Venezuela is "different" often point to narrow military objectives or insist that the United States is not seeking regime change. But foreign policy experts warn that this belief in controlled outcomes is a fantasy. As the Stimson Center cautions, "a war in Venezuela would not solve Latin America's drug or dictator problems" and would instead trigger cascading instability across an already fragile region. These assessments are not ideological; they are warnings from institutions familiar with the contours of failed interventions.
+
+The legal justification for escalation also mirrors wars in the Middle East. The Bush administration relied on overbroad interpretations of the 2001 Authorization for Use of Military Force, stretching its reach far beyond any reasonable intent. Now, the Venezuela narrative is being routed through a similar loophole: reclassifying geopolitical confrontation as "counter-narcotics" enforcement. The U.S. has a long pattern of waging war "based on false and overstated intelligence" and dressing exceptional violence in the language of technical necessity.
+
+The conviction that America can topple governments and manage the aftermath has been disproven repeatedly. Iraq's collapse into sectarian violence was not the product of bad luck but of a fundamental misreading of power vacuums and post-regime realities; U.S. planners assume that political institutions would endure the shock of intervention, or just simply don't care. Instead, they crumble. Venezuela, already grappling with economic crisis, mass migration, and eroded infrastructure, is even less equipped to absorb such a blow. Intervention would not create stability; it would detonate what remains of the state.
+
+And yet, despite two decades of empirical evidence, Washington continues to treat war as a manageable instrument. As tensions rise in the Caribbean, commentators are already recycling the language of "limited strikes" and "measured responses," the same euphemisms that obscured the real magnitude of the Iraq invasion until it was irreversible. Any U.S. miscalculation, a naval confrontation, an armed retaliation, or a misidentified target could rapidly escalate a regional standoff into a full-spectrum conflict.
+
+The lesson Iraq left us, taught in blood, debt, and global distrust, was that war is never as clean, controlled, or righteous as its architects promise. Venezuela is not an exception. It is a warning. And if the United States once again confuses military coercion for political wisdom, the next generation will inherit the consequences, just as this one inherited the ghosts of Baghdad. The real question is not whether we can stop another misguided war. It is whether we are willing to learn from the last one before it is too late.
+
+— Omar Dahabra`
   },
   {
     slug: "brain-rot",
@@ -563,6 +628,29 @@ Biased media feeds political biases, factionalizing society through ideological 
 As <a href="https://www.gutenberg.org/ebooks/815" target="_blank" rel="noopener noreferrer">Alexis de Tocqueville</a> states in Democracy in America, "the majority [in a democracy] possesses a power which is physical and moral at the same time; it acts upon the will as well as upon the actions of men, and it represses not only all contest, but all controversy."
 
 The philosopher and educationist John Dewey, writing of an industrial America, states that "democracy has to be born anew every generation, and education is its midwife." This is particularly true of civic education and proper instruction in policy, without which voters are reduced to making groundless and misinformed decisions about a nation's highest offices.`
+  },
+  {
+    slug: "cc-forever-wars-explained",
+    title: "Forever Wars, Explained",
+    subtitle: "",
+    description: "November 17, 2025  Why does it seem as if the U.S is constantly at war? In every administration, we hear stories of unilateral drone strikes taken against what seems to be a new country every day. Ven...",
+    category: "Policy & Governance",
+    publishedAt: "2025-11-17",
+    authorSlug: "samyak-duggirala",
+    readTime: "3 min read",
+    hasFullContent: true,
+    graphicColors: ["#0891b2", "#6366f1"],
+    graphicIcon: "📊",
+    partnership: "Capitol Commentary",
+    content: `Why does it seem as if the U.S is constantly at war? In every administration, we hear stories of unilateral drone strikes taken against what seems to be a new country every day. Venezuela, Nicaragua, Iran, Iraq, Yemen, Afghanistan, Somalia, and the list keeps on growing. While Congress needs to formally declare war, the POTUS, as commander-in-chief, can take action in any way they see fit. Politicians excuse their actions in the name of "democracy". But what kind of democracy is America? As the Council of Foreign Relations laments, the U.S is above international law; many of the U.S's actions in foreign countries would be condemned if the country were a signatory to international treaties. Clearly, the U.S's obsession with foreign intervention is driven by an ulterior motive: the Military-Industrial Complex.
+
+Defense companies directly benefit from their products being "shipped" worldwide. In order to secure their future profits, defense contractors lobby the government to support pro-war legislation. Jacobin analyzes two key ways the military-industrial complex hurts Americans at home and global citizens abroad. First, military budgets are at an all-time high. Of the \$14.5 trillion the Pentagon spent between fiscal years 2002 and 2021, 55 percent went to military contractors. Our tax money is going directly into the private sector. Second, military contractors donate millions to congressmen during re-elections while spending even more on lobbying. Companies like Lockheed Martin, Northrop Grumman, and Boeing are all top ten contributors in lobbying expenses.
+
+Empirically, the U.S military interventions are rarely successful. In fact, the U.S does more to fuel terrorism than hurt it. In Yemen, for example, the European Council on Foreign Relations warrants that U.S strikes empower the Houthis to increase military drills. In Somalia, data proves that more instability has ravaged the region as a result of post 9/11 interventions. More recently, the strikes on Venezuela killing 21 people, only emboldened cartels to continue confrontational policies. The industry thrives on a never-ending threat. The more conflicts around the world, the more contracts private companies can sign.
+
+The billions going towards war are billions not allocated to feeding our population, providing livable wages, and issuing healthcare. As the defense budget ramps up even further, it is imperative to keep in mind the effects of the U.S's military adventurism both at home and abroad. Here, companies like Lockheed Martin, Raytheon, Northrop Grumman, Palantir, etc., line their pockets with war. Abroad, terror organizations fuel violence.
+
+— Samyak Duggirala`
   },
   {
     slug: "xenotransplantation",
@@ -705,6 +793,29 @@ And no, it didn't stop there. Broadcasted media about the protests in East Afric
 So yes, social media and technology can be seen as a double-edged sword—on one end, it keeps us endlessly scrolling and craving for artificial dopamine releases, on the other end, it offers us a familiar platform, to amplify our voices and spark a real change, specifically in the political arena. Let's make waves with every post, share and tweet, and not scroll past change but rather, towards it. We, as teenagers, hold the future in our very hands, so let's make sure it's one worth sharing!`
   },
   {
+    slug: "cc-signs-authoritarianism-big-tech",
+    title: "Signs of Authoritarianism: Big Tech",
+    subtitle: "",
+    description: "November 14, 2025  On January 20, 2025, beside incumbent Donald J. Trump stood the billionaire tech leaders of the future. Bezos, Zuckerberg, and Musk. 287 days later, we are staring down the barrel o...",
+    category: "Policy & Governance",
+    publishedAt: "2025-11-14",
+    authorSlug: "samyak-duggirala",
+    readTime: "3 min read",
+    hasFullContent: true,
+    graphicColors: ["#d946ef", "#ec4899"],
+    graphicIcon: "🗳️",
+    partnership: "Capitol Commentary",
+    content: `On January 20, 2025, beside incumbent Donald J. Trump stood the billionaire tech leaders of the future. Bezos, Zuckerberg, and Musk. 287 days later, we are staring down the barrel of right-wing authoritarianism boosted by new technological capabilities. However, the U.S. has long used "innovation" to violate the civil liberties of everyday citizens. From the Patriot Act to Biden's virtual border, today's techno-fascism is merely a continuation of America's long history of surveillance.
+
+Political commentators and experts on fascism all see the writing on the wall. The U.S has long been involved in using its private tech sector to further its imperial interests. Now, imperialism has turned inwards. Researchers from the Review of European Economic Policy put it best: "Military and intelligence apparatuses cannot do without Big Tech." The natural progression of military partnerships is the technology being used on American citizens. Perhaps the biggest example is surveillance technology, provided by Palantir, in towns hundreds of miles away from the U.S.-Mexico border.
+
+While Trump keeps his Big Tech allies close, the actions of previous presidents have paved the path forward. For example, post 9/11 policy infringed on privacy rights. The New York Times reveals that surveillance exceeded national security needs, with the government collecting over 534 million phone records from ordinary people. In Obama's case, rampant drone strikes and the excuse of "metadata" brought surveillance further into the mainstream. For Biden, the digital border fueled by invasive surveillance technology built the backbone of Trump's largest deportation campaign in history.
+
+The U.S is built on data. In fact, the entire world is. As the U.S further marginalizes and oppresses communities back home, it's crucial to recognize where it all started. The current administration's partnership with Big Tech would not exist without previous presidents pushing the envelope further. Authoritarianism develops as technology gets better, and the government becomes willing to apply the same technology against us, instead of for us.
+
+— Samyak Duggirala`
+  },
+  {
     slug: "cyber-warfare",
     title: "Cyber Warfare",
     subtitle: "Exploring the Strategies and Consequences of Battles in the Digital Realm",
@@ -825,6 +936,43 @@ When the truth becomes hard to discern, heavy polarization of politics brews. As
 Is there a way to fix this issue? Well, no. You can't magically stop another human's desire to spread a certain ideology. However what we can do is develop software that can be used on all platforms that is able to determine the authenticity of a video, image, or voice instantaneously. We are still in the early stages of AI development, so as deepfakes develop, so will the technology to police them.
 
 Additionally, American citizens can scroll with caution. It can be easy to believe everything you see, accepting every news article at face value. However, this can have ill consequences such as falling victim to misinformation. Citizens must browse the internet with a continual skepticism, not coming to conclusions until the entire picture of a story has been painted. There is no need to be scared, it's not like the world is ending. However, it is important to stay aware. Truth is not relative.`
+  },
+  {
+    slug: "cc-minimum-wage-myths-debunked",
+    title: "5 Myths About Minimum Wage, Debunked",
+    subtitle: "",
+    description: "November 10, 2025  Across the United States, the cost of living is rising, while wages are stagnating. As the fight over the minimum wage in legislatures is becoming more prominent, it is important to...",
+    category: "Policy & Governance",
+    publishedAt: "2025-11-10",
+    authorSlug: "omar-dahabra",
+    readTime: "3 min read",
+    hasFullContent: true,
+    graphicColors: ["#f59e0b", "#ef4444"],
+    graphicIcon: "💼",
+    partnership: "Capitol Commentary",
+    content: `Across the United States, the cost of living is rising, while wages are stagnating. As the fight over the minimum wage in legislatures is becoming more prominent, it is important to combat myths that overtake the conversation surrounding the minimum wage.
+
+**Myth 1: "A higher minimum wage only benefits younger workers."**
+
+According to a report from Keystone Research Center, 90% of workers who would benefit from a \$12 minimum wage in Pennsylvania were age 20 or older; many had some college education and worked full-time. Adults comprise the majority of low-wage earners, with women and family providers forming a large share. In short, raising the minimum wage directly impacts working adults and families, not just high-school students. Providing a minimum wage is necessary for the backbone of America's workforce.
+
+**Myth 2: "Raising the minimum wage will drive large price increases across all goods and services."**
+
+While raising wages may increase some costs for businesses slightly, the actual pass-through to consumer prices is remarkably small. Keystone Research Center reports that a 25% minimum-wage increase resulted in only a 1.45% rise in restaurant prices. Overall, the gains from reduced turnover, higher morale, and improved productivity can offset much of the cost. Modest wage adjustments are not proven to cause inflation; instead, they bring manageable changes while building stronger, more stable, and more livable local economies.
+
+**Myth 3: "Workers earning just above the minimum wage will be harmed when the wage rises."**
+
+Higher floors lift wages across nearby brackets as employers raise pay to retain experienced workers, meaning that people overall are benefiting. In Pennsylvania, when wages rose to \$15, over 560,000 Pennsylvanians earning slightly more than that also benefited from upward adjustments. Raising the floor for minimum wage exerts upward pressure throughout the low-wage spectrum, including those just above minimum wage.
+
+**Myth 4: "Small businesses will be destroyed by a higher minimum wage."**
+
+In reality, the opposite is true. Uniform living wage standards actually level the playing field, preventing larger corporations from undercutting smaller competitors through wage suppression. Moreover, higher pay reduces turnover, saving small businesses thousands in rehiring and training costs. As an added benefit, increased consumer purchasing power flows directly back into local shops and services, driving the growth of these businesses.
+
+**Myth 5: "Raising the minimum wage will cause significant job losses."**
+
+Research shows that wage hikes ensure that workers have basic living standards while reducing turnover. Overall, a review of 64 empirical studies found no consistent evidence that higher minimum wages cause job losses, because the jobs are set into the ecosystem. Rather than destroying jobs, higher wages stabilize employment and benefit both employees and employers over time through overall economic growth.
+
+— Omar Dahabra`
   },
   {
     slug: "the-future-politics",
@@ -971,6 +1119,29 @@ Here, there would be no bias in direct decision-making about funding because dec
 In conclusion, the politics of scientific funding represents a delicate balance between opportunity and risk. While political support can drive significant scientific advancements, undue influence can impede progress and undermine public trust in science. Navigating this complex landscape requires vigilance, transparency, and a commitment to scientific integrity, ensuring that research can flourish and contribute to societal advancement free from the constraints of political bias.`
   },
   {
+    slug: "cc-pentagon-restrictive-press-rules",
+    title: "The Pentagon's New Restrictive Rules on Freedom of the Press",
+    subtitle: "",
+    description: "October 17, 2025  The First Amendment calls for the freedom of the press. In typical Trump administration fashion, constitutional language is being overlooked, misinterpreted, and violated. Behind the...",
+    category: "Policy & Governance",
+    publishedAt: "2025-10-17",
+    authorSlug: "samyak-duggirala",
+    readTime: "3 min read",
+    hasFullContent: true,
+    graphicColors: ["#8b5cf6", "#ec4899"],
+    graphicIcon: "🌐",
+    partnership: "Capitol Commentary",
+    content: `The First Amendment calls for the freedom of the press. In typical Trump administration fashion, constitutional language is being overlooked, misinterpreted, and violated. Behind the new policy is Cabinet Member and Secretary of War Pete Hegseth, infamous for his text message follies. Now, a mass exodus of journalists has occurred, leaving the Pentagon instead of agreeing to restrictive rules.
+
+So, what does the Pentagon's new policy exactly entail? In order to answer that, we first have to look at the decades of history surrounding the relationship between the Pentagon and the Press. For decades, a staple of U.S democracy has been the freedom of the Press to report on crucial foreign policy issues through rigorous journalism in the Pentagon. Mainstream media organizations disseminate political information to millions of Americans quickly and efficiently. A key facilitator of this process is our government's willingness to work with the press. Now, any story published must be specifically authorized by the Department of Defense (now referred to as the Department of War). In response, most major news outlets have completely withdrawn from the Pentagon's reporting process simply because the new rules are too restrictive. While this administration claims its policies are aligned with First Amendment-protected rights, reality paints a different picture. If the DoD has complete control over the content of various mainstream media publications, then the press is no longer free.
+
+Today's attacks on the free press are nothing new. Earlier this year, the Trump administration orchestrated massive cuts to funding. Both NPR and CBS were victims of a \$1.1 billion dollar cut to public broadcasting. The consequences have already led to tangible negative effects when it comes to the First Amendment. Although it may seem contradictory, state-funded media has been a cornerstone of America's dissemination of information. Simply put, state-funded media is a huge factor into local news, a key indicator of a strong democracy. Moreover, public media is typically free of bias as proven empirically. However, the Trump administration's policy decisions act under the false assumption that the media has a liberal bias. Precisely, that's why
+
+Overall, the Trump Administration's rampant attacks on protected Free Press signal a slippery slope. As increased government changes to free and public media rise, it is the American people who are worse off due to a lack of access to information.
+
+— Samyak Duggirala`
+  },
+  {
     slug: "technology-and-geopolitics",
     title: "Technology and Geopolitics",
     subtitle: "How Modern Technology Shapes Political Analysis and Engagement",
@@ -1053,6 +1224,31 @@ Nonetheless, together with these chances, innovation provides difficulties for p
 ## Conclusion
 
 Finally, innovation is significantly forming the future of political scientific research jobs, using brand-new devices along with techniques for research study, evaluation together with interaction. From information analytics and social networks to electronic interaction systems, innovation has broadened the opportunities for political questions while additionally presenting moral as well as methodological difficulties. By welcoming technology along with the crucial query, political researchers can harness the transformative possibility of innovation to progress our understanding of political procedures together with add to educated decision-making in an increasingly complicated together with adjoined globe.`
+  },
+  {
+    slug: "cc-alaska-environmental-impacts-ai",
+    title: "Alaska: A Case Study for the Environmental Impacts of AI",
+    subtitle: "",
+    description: "October 13, 2025  Trump's call to \"win the AI arms race\" has come at a steep environmental price. On October 6, 2025, the administration approved the Ambler Road Project, a 211-mile industrial corrido...",
+    category: "Policy & Governance",
+    publishedAt: "2025-10-13",
+    authorSlug: "omar-dahabra",
+    readTime: "3 min read",
+    hasFullContent: true,
+    graphicColors: ["#14b8a6", "#3b82f6"],
+    graphicIcon: "📋",
+    partnership: "Capitol Commentary",
+    content: `Trump's call to "win the AI arms race" has come at a steep environmental price. On October 6, 2025, the administration approved the Ambler Road Project, a 211-mile industrial corridor that will traverse national parks and one of the most important ecosystems on the planet. This decision reverses a previous 2024 rejection that cited potential harm to wildlife and Indigenous communities that would be irreversible. Using "critical minerals" as a justification, communities are being destroyed.
+
+During an Oval Office meeting, Trump said that the decision was necessary to "unleash billions and billions of dollars in wealth." And he is correct, from a financial side, there is a motivation. The Ambler district holds more than \$7 billion on copper reserves, the same metals that are crucial to energy-hungry data centers that drive AI systems, crucial to AI. In an area where the growth of these data centers is crucial, resource nationalism is necessary. Trump's recent calls for resource nationalism, despite coming at the cost of much of the stock market, have only increased.
+
+Looking at the project specifically, just last year, the Bureau of Land Management, citing the EPA and tribal councils, went into detail describing how devastating the project would be: destroying fish habitats, contaminating waterways, and destroying migration routes for organisms that are already endangered. The scale of the project is staggering, cutting across 3,000 different streams, necessitating the construction of 50 bridges, and slicing through habitats that have sustained native communities for thousands of years. For tribal leaders, both ecological collapse and cultural erasure are at stake, with the project a part of the continued genocide of Native culture. The approval of this project is just an example of the pattern of deregulation. The administration also plans to roll back the "Roadless Area Conservation Rule," now allowing over 45 million acres of protected forests to construction of roads and access to logging, shifting conservation to a backseat while corporate profits are coming first.
+
+Unsurprisingly, AI commentators have celebrated this move. Trump's \$500 billion "Stargate Project," which was launched earlier this year with OpenAI, Oracle, and SoftBank, aims to build a nationwide chain of these exact energy-intensive data centers. Executives like Sam Altman, Tim Cook, and Mark Zuckerberg contributed millions to Trump's fund after attending a White House roundtable. These AI datacenters consume enormous amounts of power, billions of gallons of water for cooling, and generate insane amounts of carbon emissions. These facilities are often clustered near vulnerable ecosystems, because that is where cheap water and land intersect. The Ambler Road project is simply an example of this trend.
+
+As climate disasters are only accelerating and Arctic ice is melting at a record pace, Trump's push for resource extraction could shape America's ecological legacy for decades. The decision of policymakers and corporations will have deep implications on our world, and the pursuit of AI dominance may sacrifice millions worldwide.
+
+— Omar Dahabra`
   },
   {
     slug: "the-ticketmaster-monopoly",
@@ -1203,6 +1399,29 @@ In the wake of scandals, South Korea has introduced some reforms like the Anti-G
 Samsung has cultivated a privileged position of power and closeness with South Korea's government rooted in the country's economic development strategy. While Samsung's success contributed to South Korea's rise, its oversized political influence raises concerns over cronyism, corrupt practices and the health of the nation's democracy. Addressing corporate dominance in governance through reforms and accountability measures is crucial for restoring public trust and ethical capitalism in South Korea.`
   },
   {
+    slug: "cc-signs-authoritarianism-expanding-national-guard",
+    title: "Signs of Authoritarianism: Expanding Use of the National Guard",
+    subtitle: "",
+    description: "October 4, 2025  In under a year, Trump has federalized the National Guard in Los Angeles, the District of Columbia, Chicago, Portland, and Memphis. The rapid expansion of federal forces in major Amer...",
+    category: "Policy & Governance",
+    publishedAt: "2025-10-04",
+    authorSlug: "samyak-duggirala",
+    readTime: "3 min read",
+    hasFullContent: true,
+    graphicColors: ["#dc2626", "#f97316"],
+    graphicIcon: "🔍",
+    partnership: "Capitol Commentary",
+    content: `In under a year, Trump has federalized the National Guard in Los Angeles, the District of Columbia, Chicago, Portland, and Memphis. The rapid expansion of federal forces in major American cities is both an infringement on the people's fundamental rights and a decline into autocracy. Today, Democratic Governor J.B. Pritzker claims Trump is planning to mobilize nearly 300 members of the National Guard into Illinois. The consequences of rampant federal action could be devastating for millions of people in marginalized communities. In Chicago, federal forces have already hurt protestors, people of color, and immigrants. Indeed, the Trump administration's abrasive actions must not escalate further.
+
+Although Trump and his allies consistently claim their crackdown on crime is both necessary and effective, the evidence begs to differ. Take Portland, for example, President Trump called the city "war-ravaged" despite what city officials and residents see with their own eyes. In fact, the only instance of "chaos" is outside ICE facilities where non-violent protests take place. Yet, Trump's lies, underneath the deceit, have an ulterior motive. By painting a picture of "left-wing terrorism," Trump criminalizes dissent and decreases the general population's willingness to support resistance against harsh, inhumane immigration policy.
+
+Throughout every city where federal troops have been deployed, the same playbook has been utilized. First comes the rhetoric, condemning dissent. Next comes dangerous action through the mobilization of hundreds of troops. As federal officers assist with Trump's immigration goals, the people of each city suffer at the hands of executive overreach. Instead of making our cities safer, the National Guard only adds fear to the lives of everyday citizens through severe policing. A D.C. judge describes the ongoing issue as a clear breach of constitutional rights with "people being arrested without cause, minor cases charged as felonies, and people left to suffer in jail for days or weeks."
+
+Fortunately, local governments are fighting back in the courts. At the time of writing this article, a Portland federal judge has blocked President Trump's orders for the deployment of the National Guard. U.S. District Judge Karin J. Immergut, appointed by Trump, rationalized her decision by stating that recent protests have been largely peaceful. Moreover, the city of Portland, on Sept. 28th, filed a separate lawsuit against Trump's unlawful deployment. Combined, the state of Oregon is resisting against authoritarian moves made by the Trump administration. Moreover, wider attempts from cities all over the country are currently combating Trump's executive overreach through organized protests and free speech. Now more than ever, it is crucial to resist. Conceding demands, remaining complacent, and quitting dissent is exactly what authoritarians thrive on. Remember, resistance, in any way possible, is always the frontline defense against autocratic encroachment.
+
+— Samyak Duggirala`
+  },
+  {
     slug: "examining-the-morality-and-ethics-of-genetic-engineering-in-humans",
     title: "Examining the Morality and Ethics of Genetic Engineering in Humans",
     subtitle: "Where the Boundaries of Morality Blur and the Essence of our Humanity Stands at the Precipice",
@@ -1347,6 +1566,33 @@ In conclusion, we must acknowledge and confront the undeniable negative impact o
 Nevertheless—through rigorous examination coupled with advocating for ethical reform—we can endeavor toward cultivating a digital landscape that is more inclusive, equitable, and responsible. We can harness social media's transformative potential and uphold democratic principles by empowering grassroots activists, fostering genuine dialogue.`
   },
   {
+    slug: "cc-the-government-shutdown-explained",
+    title: "The Government Shutdown, Explained",
+    subtitle: "",
+    description: "October 1, 2025  Today, on October 21st at 12:01 AM EDT, after Congress failed to pass appropriations for the new fiscal year, the U.S. federal government shut down. Our political climate, marked by p...",
+    category: "Policy & Governance",
+    publishedAt: "2025-10-01",
+    authorSlug: "omar-dahabra",
+    readTime: "3 min read",
+    hasFullContent: true,
+    graphicColors: ["#7c3aed", "#3b82f6"],
+    graphicIcon: "💡",
+    partnership: "Capitol Commentary",
+    content: `Today, on October 21st at 12:01 AM EDT, after Congress failed to pass appropriations for the new fiscal year, the U.S. federal government shut down. Our political climate, marked by partisanship, has collapsed into administrative unraveling.
+
+This drastic context comes in the context of the Trump administration reworking the levels of executive powers and weakening checks to contain abuses. In January, Trump fired 17 inspectors generals who were tasked to maintain checks through federal oversight. Overall, the administration is starving independent bodies of resources, such as the Council of the Inspectors General on Integrity and Efficiency, jeopardizing what is left of accountability for the government.
+
+The political climate that led to appropriations not being agreed upon stems from concerns over recent Trump administration actions. The admin has pulled away funding from crucial infrastructure in blue states, such as freezing billions in NYC transit initiatives. This action epitomizes the attacks based on polarization amid the shutdown. Beyond funding, Trump withdrew nominations for unqualified roles in the Bureau of Labor Statistics and the Commodity Futures Trading Commission, showing that he is even facing internal chaos over his actions, and showing the issues with politicizing agencies with tasks as mundane as publishing statistics. Together, these previously described actions reflect the broader ambition to centralize authority in Washington and explain why the political landscape has been so discontent with Trump.
+
+But what about the consequences of the shutdown? Amid the shutdown, the administration is reshaping the federal workforce in arguably the most dramatic manner in history. Over 100,000 workers are expected to leave the government under a designated "deferred resignation" program, while forced retirements, firings, and buyouts could increase the number to over 275,000. In total, these reductions represent around 12 percent of the federal civilian workforce, eroding the credibility, capacity, and expertise of our government. The economic costs are also mounting. A memo from the White House estimates that each week the shutdown continues, \$15 billion in GDP could be lost. Inside the agencies, around 750,000 workers are being furloughed, with these workers losing around \$400 million per day, with many having to work without pay. Programs housing vulnerable populations, with programs such as food assistance and public health, are under threat, especially in states that operate under slim fiscal margins. In the long run, the shutdown is a negative for U.S. credit, undermining market confidence in our economy.
+
+Beyond the economy, there are political consequences. Suspending funding, mass dismalls, and tight control create a strategy where the executive has sole control, sidelining Congress and the local government. The administration's attacks on oversight, as previously described, only create further cause for alarm. Deleting checks on the executive, especially at a time of crisis, creates a precedent of tyrannical authority. These collapsing institutions, beyond just eroding democracy, create a situation where it is much harder to respond to a crisis. Whether it be economic shock, natural disasters, or public health emergencies, the risk of failure is only growing as a result of Trump-induced partisanship. As a result of local governments suing the federal administration over funding concerns, or the overall political landscape in Congress being the most polarized, D.C. seems to be falling apart.
+
+The events unfolding in Washington shouldn't be just looked at as a result of immediate consequences; what should be kept in mind is the events that caused them to occur. Unless checked, the partisanship and weak institutions that created this problem could mark the beginning of a structural collapse that forever breaks our government.
+
+— Omar Dahabra`
+  },
+  {
     slug: "softbank-group-corp-sftby",
     title: "SoftBank Group Corp (SFTBY)",
     subtitle: "The Fervor of Foresight or Financial Roulette?",
@@ -1487,6 +1733,37 @@ The use of these algorithms are meant to allow users to share content similar to
 Proliferation of polarization is seen to be linked with social media as groups are able to spread ideals and create echo chambers on a basis of confirmation biases amongst users. In more recent years, many have seen groups such as Republicans, fall victim to echo chambers causing massive ideological extremes.
 
 As political parties are pushed away from aligning agendas and following their partisanship, this has damaged policy making in the status quo. Many politicians start to disagree with one another due to misinformation spreading like wildfires. With the status quo being disrupted, this interrupts the flow of the country itself. The country will start to fall behind and not be able to compete because of a bipartisan political system turning into two political extremes with no cooperation.`
+  },
+  {
+    slug: "cc-a-brief-history-of-false-flag-attacks",
+    title: "A Brief History of False-Flag Attacks",
+    subtitle: "",
+    description: "December 9, 2025  A false flag is an attack designed to pin blame on a party while disguising the real actor responsible for the operation. For decades, the U.S has employed false flag operations in f...",
+    category: "Policy & Governance",
+    publishedAt: "2025-12-09",
+    authorSlug: "samyak-duggirala",
+    readTime: "4 min read",
+    hasFullContent: true,
+    graphicColors: ["#059669", "#10b981"],
+    graphicIcon: "📰",
+    partnership: "Capitol Commentary",
+    content: `A false flag is an attack designed to pin blame on a party while disguising the real actor responsible for the operation. For decades, the U.S has employed false flag operations in foreign countries to galvanize public support for military adventurism. Whether it be in Cuba, Vietnam, Palestine, or in America itself, the U.S. imperial playbook has remained largely the same regardless of who is in charge.
+
+**Operation Northwoods, Cuba**
+
+Fidel Castro's control of Cuba spelled disaster for the U.S in the midst of the Cold War. The U.S. sought to overthrow Cuba's government for a couple of key reasons. First, Castro nationalized all U.S companies operating in Cuba, transferring ownership of sugar mills and oil refineries from the private sector to the public sector. Second, the adoption of socialist practices and rhetoric from a country ninety miles away from the U.S would send the wrong message during the Cold War. Altogether, the U.S needed to get rid of Castro's power in Cuba. In order to garner support, Operation Northwoods came across President Kennedy's desk. Declassified CIA documents reveal plans to "create an incident which will demonstrate convincingly that a Cuban aircraft has attacked and shot down a chartered civil airliner." The U.S. operation to murder Cuban and U.S. citizens alike was fortunately rejected by President Kennedy. However, the plan was approved by Kennedy's Joint Chiefs of Staff, the senior-most military officials in the U.S. Additionally, a failed U.S. invasion of Cuba still occurred. To this day, the U.S. remains hostile to Cuba through economic sanctions.
+
+**Gulf of Tonkin, Vietnam**
+
+No one knows who shot first. The U.S. entered the Vietnam War after the USS Maddox, stationed in the Gulf of Tonkin, was attacked by North Vietnamese boats. First, on August 2nd, then on August 4th. As declassified files from the NSA in the early 2000s prove, the U.S. greatly exaggerated the first attack while entirely fabricating the second one. The "attack" on August 4th was actually the result of poor equipment performance with faulty detection. Moreover, time logs were altered to make it appear as if attacks had occurred on the fourth. President Lyndon B. Johnson ran with the false narrative and utilized the Gulf of Tonkin incident to gain congressional approval for unilateral military action against Vietnam. As a result of the U.S. war, more than 3 million Vietnamese died with American casualties reaching 58,000.
+
+**Lavon Affair, Palestine**
+
+Israel has carried out many false flag operations to justify its occupation of Palestine. However, the Lavon affair is unique as its targets were U.S. institutions. The IDF had planted bombs in U.S civic buildings in Cairo, blaming attacks on the Egyptians. Fortunately, the Egyptian military prevented Israeli attacks. However, the attack's failure still led to a massive chain of events as Egypt sentenced two of the Egyptian Jewish agents who carried out the attacks to death. Consequently, Israel launched a military incursion into Gaza that killed 39 Egyptians. Even further, these tensions escalated directly into the Suez crisis as Egypt wrestled with Western powers.
+
+As the U.S. continues to expand its military intervention across the globe, it is imperative to remember the false narratives the U.S. perpetuates to justify its illegal actions. Today, Venezuela appears to be the next victim of imperialist policy. As Venezuela holds the world's largest oil reserves, the U.S. motivation to cause conflict under the guise of "counter-narcotics" appears to be a lie. Just one month ago, Venezuelan authorities themselves claimed to have uncovered planned false flag operations by covert U.S. forces. As the USS Gravely occupies the coast of Venezuela, we must watch out for a possible false flag attack. Moreover, we must remain skeptical of the information the U.S. feeds us about Venezuela, just as the public remained skeptical of Cuba and Vietnam in the 20th century. False flag fabrications are too common in history. We have not uncovered all of them, but being aware of the strategy itself is important in order to spot the same patterns in modern-day conflicts.
+
+— Samyak Duggirala`
   },
   {
     slug: "artificial-intelligence-as-a-mediator",
@@ -1637,6 +1914,31 @@ However, implementation would require careful consideration of social, political
 ## Conclusion
 
 In summary, the implementation of blockchain technology in voting systems has the potential to address some of the critical challenges in traditional voting systems, including security, transparency, and efficiency. Its widespread adoption, however, requires careful consideration of technology, political, and social aspects. The future of voting systems depends on investments in technological solutions that can improve transparency, efficiency, and security.`
+  },
+  {
+    slug: "cc-the-08-recession-explained",
+    title: "The '08 recession, explained",
+    subtitle: "",
+    description: "December 2, 2025  The Federal Reserve controls the direction of our entire economy through setting interest rates, managing the money supply, and lending money during economic hardship. But who contro...",
+    category: "Policy & Governance",
+    publishedAt: "2025-12-02",
+    authorSlug: "samyak-duggirala",
+    readTime: "3 min read",
+    hasFullContent: true,
+    graphicColors: ["#0891b2", "#6366f1"],
+    graphicIcon: "⚖️",
+    partnership: "Capitol Commentary",
+    content: `The Federal Reserve controls the direction of our entire economy through setting interest rates, managing the money supply, and lending money during economic hardship. But who controls the Federal Reserve? The answer is the private sector. Specifically, the Federal Reserve operates through exclusive partnership with the country's leading financial institutions. The policymaking branch of the Fed, the Federal Open Market Committee (FOMC), includes board members hand-picked by banks. When the FOMC lowers the targeted interest rate, the private financial sector increases the amount of loans it gives out because it becomes cheaper to do so. Leading up to December 2007, banks and other financial institutions took advantage of the Fed's lower interest rates. Wall Street issued predatory, high-risk loans, with racial minorities disproportionately targeted. Soon after, economic chaos ensued.
+
+**Regulation, or lack thereof**
+
+In the U.S, multiple agencies are in charge of regulating the private sector's malicious activities. Yet, leading up to the '08 recession, these agencies neglected to take action against high-ranking financial institutions and their risky loans. In the housing market, banks gave loans to borrowers with no income, no job, and no assets. Analysis from the S.E.C. in 2013 found that 40% of Bank of America's mortgages did not meet the company's own standards. Unfortunately, the S.E.C. only investigated and regulated after the affair. Moreover, the FOMC consistently downplayed the housing bubble in meetings leading up to the 2008 crash. The transcripts of the FOMC meetings reveal that committee members viewed the housing sector as separate from the rest of the economy, rather than as an interconnected part of the overall economy. Eventually, the government ended up stepping in. However, government regulation would come in the form of bailouts for banks instead of harsh reprimands.
+
+The congressional solution to the economic crisis was the Troubled Asset Relief Program (TARP). The policy would allow the U.S to purchase the toxic assets from the banks, relieving them of their troubles. Essentially, it granted welfare for the rich. MIT professor Deborah J. Lucas estimated the cost of the bank bailouts at \$498 billion. Indeed, the main winners were large, unsecured creditors of large financial institutions. The losers were taxpayers who directly subsidized the banks. The impact is larger than the economy; it was cultural. The results of the 2008 election promised change for the average consumer, but policies that subsidize the rich were a direct betrayal. Thus, our citizens became fed up with private interests controlling their livelihoods. The Occupy Wall Street movement kicked off, highlighting America's wealth inequality. A decade later, not much has changed.
+
+Right now, banks and financial institutions are participating in the same fraudulent activities that caused the financial crash of 2008. Regulators back then didn't act fast enough. Similarly, today, regulators leave high-risk loans largely unaddressed. The IMF warns that the banking sector's vulnerabilities can spill over to the rest of the economy, just like in 2008. Every era has its economic issues. Our generation must prevent another economic catastrophe through legislation targeting the rich financial sector. By regulating the loans provided by banks and other financial institutions, we can better prevent future abuse. Indeed, the impacts of the last recession were catastrophic, with one-fourth of Americans losing 75% of their wealth.
+
+— Samyak Duggirala`
   },
   {
     slug: "the-role-of-social-media-in-shaping-political-discourse",
