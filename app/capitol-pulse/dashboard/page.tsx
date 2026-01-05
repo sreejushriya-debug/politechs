@@ -29,23 +29,33 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadData() {
       setFetchError(null);
+      console.log("[Capitol Pulse] Starting data fetch from API routes...");
       
       try {
         // Directly fetch from our API routes
-        const [membersRes, billsRes] = await Promise.all([
-          fetch('/api/capitol-pulse/members'),
-          fetch('/api/capitol-pulse/bills')
-        ]);
+        console.log("[Capitol Pulse] Fetching /api/capitol-pulse/members...");
+        const membersRes = await fetch('/api/capitol-pulse/members');
+        console.log("[Capitol Pulse] Members response status:", membersRes.status);
+        
+        console.log("[Capitol Pulse] Fetching /api/capitol-pulse/bills...");
+        const billsRes = await fetch('/api/capitol-pulse/bills');
+        console.log("[Capitol Pulse] Bills response status:", billsRes.status);
         
         if (!membersRes.ok) {
-          throw new Error(`Members API returned ${membersRes.status}`);
+          const errorText = await membersRes.text();
+          throw new Error(`Members API returned ${membersRes.status}: ${errorText}`);
         }
         if (!billsRes.ok) {
-          throw new Error(`Bills API returned ${billsRes.status}`);
+          const errorText = await billsRes.text();
+          throw new Error(`Bills API returned ${billsRes.status}: ${errorText}`);
         }
         
         const membersData = await membersRes.json();
         const billsData = await billsRes.json();
+        
+        console.log("[Capitol Pulse] Members loaded:", membersData.members?.length || 0);
+        console.log("[Capitol Pulse] Bills loaded:", billsData.bills?.length || 0);
+        console.log("[Capitol Pulse] Data source:", membersData.source);
         
         setMembers(membersData.members || []);
         setBills(billsData.bills || []);
