@@ -11,17 +11,71 @@ import { ArticleGraphic } from "@/components/ArticleGraphic";
 
 const ARTICLES_PER_PAGE = 9;
 
+// Distribute articles: Page 1 = 7 Politechs + 2 CC, subsequent pages = at least 2 Politechs
+function distributeArticles(articleList: typeof articles) {
+  const politechs = articleList.filter(a => !a.partnership);
+  const capitolCommentary = articleList.filter(a => a.partnership === "Capitol Commentary");
+  
+  // Sort each group by date (newest first)
+  politechs.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  capitolCommentary.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  
+  const distributed: typeof articles = [];
+  let pIdx = 0;
+  let ccIdx = 0;
+  let pageNum = 0;
+  
+  while (pIdx < politechs.length || ccIdx < capitolCommentary.length) {
+    pageNum++;
+    const pageArticles: typeof articles = [];
+    
+    if (pageNum === 1) {
+      // First page: 7 Politechs, 2 Capitol Commentary
+      for (let i = 0; i < 7 && pIdx < politechs.length; i++) {
+        pageArticles.push(politechs[pIdx++]);
+      }
+      for (let i = 0; i < 2 && ccIdx < capitolCommentary.length; i++) {
+        pageArticles.push(capitolCommentary[ccIdx++]);
+      }
+    } else {
+      // Subsequent pages: at least 2 Politechs (7 CC max)
+      const politechsRemaining = politechs.length - pIdx;
+      const ccRemaining = capitolCommentary.length - ccIdx;
+      
+      // Calculate how many of each to show
+      const politechsForPage = Math.min(
+        Math.max(2, ARTICLES_PER_PAGE - Math.min(7, ccRemaining)), // At least 2, or more if CC is running out
+        politechsRemaining
+      );
+      const ccForPage = Math.min(ARTICLES_PER_PAGE - politechsForPage, ccRemaining);
+      
+      // Add Politechs articles first
+      for (let i = 0; i < politechsForPage; i++) {
+        pageArticles.push(politechs[pIdx++]);
+      }
+      // Add Capitol Commentary articles
+      for (let i = 0; i < ccForPage; i++) {
+        pageArticles.push(capitolCommentary[ccIdx++]);
+      }
+    }
+    
+    distributed.push(...pageArticles);
+  }
+  
+  return distributed;
+}
+
 export default function ArticlesPage() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   
-  const sorted = [...articles]
-    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  // Get properly distributed articles
+  const distributed = distributeArticles([...articles]);
   
   const filtered = selectedCategory === "All" 
-    ? sorted 
-    : sorted.filter(article => article.category === selectedCategory);
+    ? distributed 
+    : distributed.filter(article => article.category === selectedCategory);
 
   // Pagination
   const totalPages = Math.ceil(filtered.length / ARTICLES_PER_PAGE);
