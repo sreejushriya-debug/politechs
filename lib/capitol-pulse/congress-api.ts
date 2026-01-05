@@ -53,23 +53,32 @@ async function fetchFromCongress<T>(endpoint: string, params: Record<string, str
 // Fetch all current members of Congress
 export async function fetchCurrentMembers(): Promise<CongressMember[]> {
   const members: CongressMember[] = [];
+  let offset = 0;
+  const limit = 250;
   
-  // Fetch current congress number (119th as of 2025)
-  const congress = 119;
-  
-  // Fetch House members
-  const houseData = await fetchFromCongress<{ members?: any[] }>(`/member/congress/${congress}/house`, { limit: '250' });
-  if (houseData?.members && Array.isArray(houseData.members)) {
-    for (const m of houseData.members) {
-      members.push(transformMember(m, 'House'));
-    }
-  }
-
-  // Fetch Senate members
-  const senateData = await fetchFromCongress<{ members?: any[] }>(`/member/congress/${congress}/senate`, { limit: '100' });
-  if (senateData?.members && Array.isArray(senateData.members)) {
-    for (const m of senateData.members) {
-      members.push(transformMember(m, 'Senate'));
+  // Fetch all current members (paginated)
+  while (true) {
+    const data = await fetchFromCongress<{ members?: any[]; pagination?: { count: number } }>('/member', { 
+      currentMember: 'true',
+      limit: String(limit),
+      offset: String(offset)
+    });
+    
+    if (data?.members && Array.isArray(data.members)) {
+      for (const m of data.members) {
+        // Determine chamber from terms
+        const chamber = m.terms?.item?.[0]?.chamber?.includes('Senate') ? 'Senate' : 'House';
+        members.push(transformMember(m, chamber));
+      }
+      
+      // Check if we've fetched all members
+      if (data.members.length < limit) break;
+      offset += limit;
+      
+      // Safety limit
+      if (offset > 600) break;
+    } else {
+      break;
     }
   }
 
@@ -86,23 +95,30 @@ function transformMember(apiMember: any, chamber: 'House' | 'Senate'): CongressM
     'Independent': 'Independent'
   };
 
+  // Parse name - API returns "LastName, FirstName MiddleName" format
+  const nameParts = (apiMember.name || '').split(', ');
+  const lastName = nameParts[0] || '';
+  const firstNameParts = (nameParts[1] || '').split(' ');
+  const firstName = firstNameParts[0] || '';
+  const fullName = nameParts.length > 1 ? `${firstName} ${lastName}` : apiMember.name || '';
+
   return {
-    bioguideId: apiMember.bioguideId || apiMember.member?.bioguideId || '',
-    name: apiMember.name || `${apiMember.firstName} ${apiMember.lastName}`,
-    firstName: apiMember.firstName || apiMember.name?.split(' ')[0] || '',
-    lastName: apiMember.lastName || apiMember.name?.split(' ').slice(1).join(' ') || '',
+    bioguideId: apiMember.bioguideId || '',
+    name: fullName,
+    firstName: firstName,
+    lastName: lastName,
     chamber,
-    party: partyMap[apiMember.partyName] || partyMap[apiMember.party] || 'Independent',
+    party: partyMap[apiMember.partyName] || 'Independent',
     state: apiMember.state || '',
-    district: chamber === 'House' ? parseInt(apiMember.district) || undefined : undefined,
+    district: chamber === 'House' ? (apiMember.district || undefined) : undefined,
     imageUrl: apiMember.depiction?.imageUrl || `https://bioguide.congress.gov/bioguide/photo/${apiMember.bioguideId?.[0]}/${apiMember.bioguideId}.jpg`,
-    officialUrl: apiMember.url || apiMember.officialWebsiteUrl || '',
-    phone: apiMember.phone || undefined,
-    office: apiMember.office || undefined,
+    officialUrl: `https://bioguide.congress.gov/search/bio/${apiMember.bioguideId}`,
+    phone: undefined,
+    office: undefined,
     termStart: apiMember.terms?.item?.[0]?.startYear?.toString() || new Date().getFullYear().toString(),
     termEnd: undefined,
     isActive: true,
-    lastUpdated: new Date().toISOString()
+    lastUpdated: apiMember.updateDate || new Date().toISOString()
   };
 }
 
@@ -110,77 +126,72 @@ function transformMember(apiMember: any, chamber: 'House' | 'Senate'): CongressM
 export async function fetchTechBills(congress: number = 119): Promise<Bill[]> {
   const bills: Bill[] = [];
   
-  // Search for bills by tech-related subjects
-  const techSubjects = [
-    'Artificial intelligence',
-    'Computer security',
-    'Internet and video services',
-    'Right of privacy',
-    'Computers and information technology',
-    'Telecommunication',
-    'Space flight and exploration',
-    'Science, Technology, Communications'
-  ];
-
-  for (const subject of techSubjects) {
-    const data = await fetchFromCongress<{ bills?: any[] }>(`/bill/${congress}`, { 
-      subject: subject,
-      limit: '50'
-    });
-    
-    if (data?.bills && Array.isArray(data.bills)) {
-      for (const b of data.bills) {
-        // Avoid duplicates
-        if (!bills.find(existing => existing.billId === `${congress}-${b.type}-${b.number}`)) {
-          const bill = await transformBill(b, congress);
-          if (bill) bills.push(bill);
-        }
-      }
-    }
-  }
-
-  // Also search by keywords in title
-  const keywords = ['artificial intelligence', 'AI', 'cybersecurity', 'privacy', 'social media', 'cryptocurrency', 'semiconductor', 'broadband'];
+  // Fetch recent bills and filter for tech-related content
+  // Congress.gov doesn't support direct keyword search, so we fetch recent bills 
+  // and filter by title keywords
   
-  for (const keyword of keywords) {
+  let offset = 0;
+  const limit = 250;
+  const maxBills = 2000; // Limit total bills to scan
+  
+  while (offset < maxBills) {
     const data = await fetchFromCongress<{ bills?: any[] }>(`/bill/${congress}`, { 
-      query: keyword,
-      limit: '25'
+      limit: String(limit),
+      offset: String(offset),
+      sort: 'updateDate+desc'
     });
     
-    if (data?.bills && Array.isArray(data.bills)) {
-      for (const b of data.bills) {
-        if (!bills.find(existing => existing.billId === `${congress}-${b.type}-${b.number}`)) {
-          const bill = await transformBill(b, congress);
+    if (!data?.bills || !Array.isArray(data.bills) || data.bills.length === 0) {
+      break;
+    }
+    
+    for (const b of data.bills) {
+      const title = (b.title || '').toLowerCase();
+      
+      // Check if title contains tech-related keywords
+      const isTechRelated = TECH_KEYWORDS.some(keyword => title.includes(keyword.toLowerCase()));
+      
+      if (isTechRelated) {
+        const billId = `${congress}-${b.type?.toLowerCase()}-${b.number}`;
+        if (!bills.find(existing => existing.billId === billId)) {
+          const bill = transformBillSimple(b, congress);
           if (bill) bills.push(bill);
         }
       }
     }
+    
+    offset += limit;
+    
+    // If we have enough tech bills, stop early
+    if (bills.length >= 100) break;
   }
 
   return bills;
 }
 
-async function transformBill(apiBill: any, congress: number): Promise<Bill | null> {
-  const billType = apiBill.type?.toLowerCase() || 'hr';
+// Keywords to identify tech-related bills
+const TECH_KEYWORDS = [
+  'artificial intelligence', 'ai ', ' ai', 'machine learning', 'algorithm',
+  'cybersecurity', 'cyber', 'data breach', 'ransomware', 'hacking',
+  'privacy', 'surveillance', 'fisa', 'data protection',
+  'social media', 'section 230', 'content moderation', 'online safety', 'tiktok',
+  'antitrust', 'big tech', 'platform', 'monopoly',
+  'broadband', 'telecommunications', 'spectrum', '5g', 'net neutrality',
+  'cryptocurrency', 'crypto', 'bitcoin', 'blockchain', 'digital asset',
+  'semiconductor', 'chips', 'microchip', 'supply chain',
+  'space', 'nasa', 'satellite', 'aerospace', 'commercial space',
+  'technology', 'digital', 'internet', 'online', 'software', 'computer'
+];
+
+// Simple bill transform for list view
+function transformBillSimple(apiBill: any, congress: number): Bill | null {
+  const billType = (apiBill.type || 'hr').toLowerCase();
   const billNumber = apiBill.number;
   
-  // Get full bill details
-  const details = await fetchFromCongress<any>(`/bill/${congress}/${billType}/${billNumber}`);
-  const billData = details?.bill || apiBill;
-
-  const title = billData.title || billData.shortTitle || '';
-  const subjects = billData.subjects?.legislativeSubjects?.map((s: any) => s.name) || [];
-  const policyArea = billData.policyArea?.name || '';
-
-  // Detect tech topics
-  const { topics, matchedSnippet } = detectTopics(
-    `${title} ${policyArea} ${subjects.join(' ')}`,
-    [...subjects, policyArea].filter(Boolean)
-  );
-
-  // Only include if tech-related
-  if (topics.length === 0) return null;
+  if (!billNumber) return null;
+  
+  const title = apiBill.title || '';
+  const { topics, matchedSnippet } = detectTopics(title, []);
 
   return {
     billId: `${congress}-${billType}-${billNumber}`,
@@ -188,24 +199,23 @@ async function transformBill(apiBill: any, congress: number): Promise<Bill | nul
     billType: billType as Bill['billType'],
     billNumber: parseInt(billNumber),
     title,
-    shortTitle: billData.shortTitle || undefined,
-    summary: billData.summaries?.summary?.[0]?.text || undefined,
-    policyArea,
-    subjects,
-    introducedDate: billData.introducedDate || '',
-    latestActionDate: billData.latestAction?.actionDate || '',
-    latestAction: billData.latestAction?.text || '',
-    sponsorBioguideId: billData.sponsors?.[0]?.bioguideId || '',
-    cosponsorBioguideIds: [], // Would need additional API call
-    cosponsorCount: billData.cosponsors?.count || 0,
-    url: `https://www.congress.gov/bill/${congress}th-congress/${billType === 'hr' ? 'house-bill' : 'senate-bill'}/${billNumber}`,
-    topics,
-    matchedSubjects: subjects.filter((s: string) => 
-      TECH_TOPICS.some(t => t.subjects.some(ts => s.toLowerCase().includes(ts.toLowerCase())))
-    ),
-    lastUpdated: new Date().toISOString()
+    shortTitle: undefined,
+    summary: undefined,
+    policyArea: '',
+    subjects: [],
+    introducedDate: apiBill.latestAction?.actionDate || '',
+    latestActionDate: apiBill.latestAction?.actionDate || '',
+    latestAction: apiBill.latestAction?.text || '',
+    sponsorBioguideId: '',
+    cosponsorBioguideIds: [],
+    cosponsorCount: 0,
+    url: `https://www.congress.gov/bill/${congress}th-congress/${billType === 'hr' ? 'house-bill' : billType === 's' ? 'senate-bill' : billType}/${billNumber}`,
+    topics: topics.length > 0 ? topics : ['AI & Automation'], // Default topic for tech bills
+    matchedSubjects: [],
+    lastUpdated: apiBill.updateDate || new Date().toISOString()
   };
 }
+
 
 // Fetch recent roll-call votes
 export async function fetchRecentVotes(chamber: 'House' | 'Senate', limit: number = 50): Promise<Vote[]> {
