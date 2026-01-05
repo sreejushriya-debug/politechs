@@ -12,7 +12,6 @@ import {
   TECH_TOPICS,
   IngestionRun
 } from './types';
-import { fetchCurrentMembers, fetchTechBills, checkApiHealth } from './congress-api';
 
 // Cache for data with timestamps
 interface DataCache<T> {
@@ -26,13 +25,23 @@ let billsCache: DataCache<Bill[]> | null = null;
 let statementsCache: DataCache<Statement[]> | null = null;
 let votesCache: DataCache<Vote[]> | null = null;
 
-// Cache duration in milliseconds (1 hour)
-const CACHE_DURATION = 60 * 60 * 1000;
+// Cache duration in milliseconds (5 minutes for client, longer on server)
+const CACHE_DURATION = 5 * 60 * 1000;
 
 function isCacheValid<T>(cache: DataCache<T> | null): boolean {
   if (!cache) return false;
   const age = Date.now() - new Date(cache.lastUpdated).getTime();
   return age < CACHE_DURATION;
+}
+
+// Determine base URL for API calls (works in both browser and SSR)
+function getBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    // Browser: use relative URL
+    return '';
+  }
+  // Server: use absolute URL
+  return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 }
 
 // Get all current members with caching
@@ -45,31 +54,41 @@ export async function getMembers(): Promise<{ members: CongressMember[]; lastUpd
     };
   }
 
-  // Try to fetch from Congress API
-  const apiHealth = await checkApiHealth();
-  
-  if (apiHealth.available) {
-    try {
-      const members = await fetchCurrentMembers();
-      if (members.length > 0) {
-        membersCache = {
-          data: members,
-          lastUpdated: new Date().toISOString(),
-          source: 'Congress.gov API'
-        };
-        return { members, lastUpdated: membersCache.lastUpdated, source: membersCache.source };
-      }
-    } catch (error) {
-      console.error('Failed to fetch members from API:', error);
+  try {
+    // Fetch from our API route (which has access to the API key)
+    const baseUrl = getBaseUrl();
+    const response = await fetch(`${baseUrl}/api/capitol-pulse/members`, {
+      cache: 'no-store' // Don't cache in browser, we handle our own caching
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}`);
     }
+    
+    const data = await response.json();
+    
+    if (data.members && data.members.length > 0) {
+      membersCache = {
+        data: data.members,
+        lastUpdated: data.lastUpdated,
+        source: data.source
+      };
+      return { members: data.members, lastUpdated: data.lastUpdated, source: data.source };
+    }
+    
+    return {
+      members: [],
+      lastUpdated: data.lastUpdated || new Date().toISOString(),
+      source: data.source || 'No data available'
+    };
+  } catch (error) {
+    console.error('Failed to fetch members:', error);
+    return {
+      members: [],
+      lastUpdated: new Date().toISOString(),
+      source: 'Error fetching data - check API configuration'
+    };
   }
-
-  // Return empty with clear messaging - NO FAKE DATA
-  return {
-    members: [],
-    lastUpdated: new Date().toISOString(),
-    source: 'No data available - API key required'
-  };
 }
 
 // Get tech-related bills
@@ -82,29 +101,41 @@ export async function getBills(): Promise<{ bills: Bill[]; lastUpdated: string; 
     };
   }
 
-  const apiHealth = await checkApiHealth();
-  
-  if (apiHealth.available) {
-    try {
-      const bills = await fetchTechBills();
-      if (bills.length > 0) {
-        billsCache = {
-          data: bills,
-          lastUpdated: new Date().toISOString(),
-          source: 'Congress.gov API'
-        };
-        return { bills, lastUpdated: billsCache.lastUpdated, source: billsCache.source };
-      }
-    } catch (error) {
-      console.error('Failed to fetch bills from API:', error);
+  try {
+    // Fetch from our API route (which has access to the API key)
+    const baseUrl = getBaseUrl();
+    const response = await fetch(`${baseUrl}/api/capitol-pulse/bills`, {
+      cache: 'no-store'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}`);
     }
+    
+    const data = await response.json();
+    
+    if (data.bills && data.bills.length > 0) {
+      billsCache = {
+        data: data.bills,
+        lastUpdated: data.lastUpdated,
+        source: data.source
+      };
+      return { bills: data.bills, lastUpdated: data.lastUpdated, source: data.source };
+    }
+    
+    return {
+      bills: [],
+      lastUpdated: data.lastUpdated || new Date().toISOString(),
+      source: data.source || 'No data available'
+    };
+  } catch (error) {
+    console.error('Failed to fetch bills:', error);
+    return {
+      bills: [],
+      lastUpdated: new Date().toISOString(),
+      source: 'Error fetching data - check API configuration'
+    };
   }
-
-  return {
-    bills: [],
-    lastUpdated: new Date().toISOString(),
-    source: 'No data available - API key required'
-  };
 }
 
 // Get statements - Congressional Record and press releases
@@ -215,6 +246,25 @@ export async function getCoverageMetrics(): Promise<CoverageMetrics> {
   };
 }
 
+// Check API health via our API route
+async function checkApiHealthViaRoute(): Promise<{ available: boolean; message: string }> {
+  try {
+    const baseUrl = getBaseUrl();
+    const response = await fetch(`${baseUrl}/api/capitol-pulse/health`, {
+      cache: 'no-store'
+    });
+    
+    if (!response.ok) {
+      return { available: false, message: `Health check returned ${response.status}` };
+    }
+    
+    const data = await response.json();
+    return { available: data.available, message: data.message };
+  } catch (error) {
+    return { available: false, message: 'Failed to check API health' };
+  }
+}
+
 // Get data health status
 export async function getDataHealth(): Promise<{
   apiAvailable: boolean;
@@ -226,7 +276,7 @@ export async function getDataHealth(): Promise<{
   issues: string[];
 }> {
   const [apiHealth, membersData, billsData, statementsData, votesData] = await Promise.all([
-    checkApiHealth(),
+    checkApiHealthViaRoute(),
     getMembers(),
     getBills(),
     getStatements(),
