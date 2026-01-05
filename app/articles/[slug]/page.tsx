@@ -174,6 +174,16 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           </div>
         )}
 
+        {/* Partnership Attribution */}
+        {article.partnership && (
+          <div className="mt-12 py-6 border-t border-b border-white/10 text-center">
+            <p className="text-white/60 text-lg">
+              In Partnership with{' '}
+              <span className="text-accent-blue font-semibold">{article.partnership}</span>
+            </p>
+          </div>
+        )}
+
         {/* About the Author - Larger Section */}
         {author && (
           <div className="mt-16 bg-gradient-to-br from-accent-blue/10 via-navy-800/50 to-accent-red/10 rounded-3xl p-8 md:p-10 border border-white/10">

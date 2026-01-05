@@ -22,6 +22,8 @@ export type Article = {
   // For generated graphics
   graphicColors: [string, string]; // gradient colors
   graphicIcon: string; // emoji or symbol
+  // Partnership info
+  partnership?: string; // e.g., "Capitol Commentary"
 };
 
 // Authors database
@@ -220,6 +222,13 @@ export const authors: Author[] = [
     bio: "The Politechs editorial team consists of passionate students and researchers dedicated to exploring the intersection of politics and technology. Our team works collaboratively to bring insightful analysis and thought-provoking content to our readers.",
     role: "Editorial Team",
     interests: ["Politics", "Technology", "Civic Engagement"]
+  },
+  {
+    slug: "omar-dahabra",
+    name: "Omar Dahabra",
+    bio: "Omar Dahabra is a contributing writer focused on immigration policy, civil liberties, and the intersection of corporate interests with government enforcement. His work examines the systemic implications of privatization on democratic accountability.",
+    role: "Contributing Writer",
+    interests: ["Immigration Policy", "Civil Liberties", "Corporate Accountability"]
   }
 ];
 
@@ -264,6 +273,39 @@ const categoryIcons: Record<string, string> = {
 
 // All articles from the Politechs Thought Gallery
 export const articles: Article[] = [
+  {
+    slug: "profits-over-people-privatization-ice",
+    title: "Profits Over People: How Privatization Is Reshaping ICE",
+    subtitle: "The Corporate Takeover of Immigration Enforcement",
+    description: "Examining how private prison companies are expanding their reach into digital surveillance and immigration enforcement, prioritizing shareholder value over human rights.",
+    category: "Policy & Governance",
+    publishedAt: "2025-12-25",
+    authorSlug: "omar-dahabra",
+    readTime: "6 min read",
+    hasFullContent: true,
+    graphicColors: ["#dc2626", "#7c3aed"],
+    graphicIcon: "⚖️",
+    partnership: "Capitol Commentary",
+    content: `The increasing entertainment of corporate control and immigration enforcement has reflected how the state is prioritizing profits over humanity. For the past few years, private prisons have steadily expanded their reach beyond detention centers and into digital monitoring, surveillance, and immigration enforcement. Recently, <a href="https://theintercept.com/2025/12/19/ice-bounty-hunters-location-surveillance-geo-group/" target="_blank" rel="noopener noreferrer">BI Incorporated, a subsidiary of GEO Group, obtained a contract with ICE</a> for location-tracking and other enforcement services. This recent development sits at the center of a larger pattern of outsourcing state power to companies whose primary motivation isn't the benefit of the public, but rather value for shareholders.
+
+## The Corporate Carceral State
+
+The corporate carceral state, even outside the lens of immigration, has for decades been reorganized around market incentives. As a result, the <a href="https://www.prisonpolicy.org/profiles/US.html" target="_blank" rel="noopener noreferrer">United States has amassed the largest incarceration rate in the world</a>. Private prison firms have lobbied in recent years for immigration strategies that focus on detention, not because of any consideration for humanity, but because they provide revenue streams. When slavery was abolished with the 13th Amendment, an exception was carved out for prisoners, and <a href="https://www.epi.org/publication/rooted-racism-prison-labor/" target="_blank" rel="noopener noreferrer">this carveout continues to be exploited by the private prison system</a>, directly rooted in the legacies of slavery. Now that corporations directly benefit from monitoring immigrants and later housing them in the facilities they operate, deportation is no longer an instrument of policy but one of the economy.
+
+## Surveillance as a Substitute for Due Process
+
+Also troubling is the expansion of surveillance in the context of it acting as a substitute for constitutional due-process. As BI Incorporated themselves market the monitoring through GPS tracking, they are new "community-based alternatives" for traditional applications of the law. When digital tracking is administered through private vendors, traditional safety mechanisms designed through courts and government institutions to provide accountability are fragmented. Even when immigrants are free and live outside the walls of detention, their daily existence is shaped by <a href="https://theconversation.com/always-watching-how-ices-plan-to-monitor-social-media-24-7-threatens-privacy-and-civic-participation-268175" target="_blank" rel="noopener noreferrer">constant monitoring, whether outside or on social media</a>.
+
+## Human Rights Concerns
+
+The moral stakes of this privatization become even more abhorrent when placed in the context of the conditions of abuse and neglect that occur inside these private detention centers. In such centers, investigations have repeatedly uncovered failures in basic safety standards, a lack of medical care, and <a href="https://phr.org/our-work/resources/endless-nightmare-solitary-confinement-in-us-immigration-detention/" target="_blank" rel="noopener noreferrer">violations of human rights</a>. These are the direct natural conclusions of a model built around the containment of cost and prioritization of profit. When the corporate ecosystem is now handed greater control over enforcement, human rights are overlooked in the name of "shareholder value."
+
+## The Erosion of Democratic Accountability
+
+This privatized enforcement has dispersed state power into networks of contracts that are harder to challenge due to less accountability and harder for communities to confront. Once functions meant for the public move into the hands of the private, any means of responsibility disappear. Decisions that determine who is detained and separated from their family are increasingly moved towards meetings rather than in courtrooms.
+
+Society shouldn't be willing to accept a model where corporations are the actors of policy rather than elected officials. These developments in ICE enforcement should be understood as a warning for the trend of governance towards other areas of policy. They reveal a trajectory where democracy dies in the wake of capitalism.`
+  },
   {
     slug: "eunice-foote-inspiring-the-future",
     title: "Eunice Foote Inspiring The Future",
