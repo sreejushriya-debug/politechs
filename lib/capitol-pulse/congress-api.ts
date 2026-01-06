@@ -122,17 +122,16 @@ function transformMember(apiMember: any, chamber: 'House' | 'Senate'): CongressM
   };
 }
 
-// Fetch tech-related bills from current congress
+// Fetch tech-related bills from current congress with sponsor details
 export async function fetchTechBills(congress: number = 119): Promise<Bill[]> {
-  const bills: Bill[] = [];
+  const techBillsBasic: any[] = [];
   
   // Fetch recent bills and filter for tech-related content
-  // Congress.gov doesn't support direct keyword search, so we fetch recent bills 
-  // and filter by title keywords
-  
   let offset = 0;
   const limit = 250;
-  const maxBills = 2000; // Limit total bills to scan
+  const maxBills = 2000;
+  
+  console.log('[Bills API] Starting bill fetch from Congress.gov');
   
   while (offset < maxBills) {
     const data = await fetchFromCongress<{ bills?: any[] }>(`/bill/${congress}`, { 
@@ -153,9 +152,8 @@ export async function fetchTechBills(congress: number = 119): Promise<Bill[]> {
       
       if (isTechRelated) {
         const billId = `${congress}-${b.type?.toLowerCase()}-${b.number}`;
-        if (!bills.find(existing => existing.billId === billId)) {
-          const bill = transformBillSimple(b, congress);
-          if (bill) bills.push(bill);
+        if (!techBillsBasic.find(existing => `${congress}-${existing.type?.toLowerCase()}-${existing.number}` === billId)) {
+          techBillsBasic.push(b);
         }
       }
     }
@@ -163,10 +161,93 @@ export async function fetchTechBills(congress: number = 119): Promise<Bill[]> {
     offset += limit;
     
     // If we have enough tech bills, stop early
-    if (bills.length >= 100) break;
+    if (techBillsBasic.length >= 80) break;
+  }
+  
+  console.log('[Bills API] Found', techBillsBasic.length, 'tech-related bills');
+  
+  // Now fetch sponsor details for each tech bill (limit to prevent rate limiting)
+  const bills: Bill[] = [];
+  const billsToFetchDetails = techBillsBasic.slice(0, 50); // Limit detail fetches
+  
+  console.log('[Bills API] Fetching sponsor details for', billsToFetchDetails.length, 'bills');
+  
+  for (const b of billsToFetchDetails) {
+    try {
+      const billType = (b.type || 'hr').toLowerCase();
+      const billNumber = b.number;
+      
+      // Fetch individual bill to get sponsor info
+      const detailData = await fetchFromCongress<{ bill?: any }>(
+        `/bill/${congress}/${billType}/${billNumber}`
+      );
+      
+      if (detailData?.bill) {
+        const bill = transformBillWithDetails(detailData.bill, congress);
+        if (bill) bills.push(bill);
+      } else {
+        // Fallback to basic info if detail fetch fails
+        const bill = transformBillSimple(b, congress);
+        if (bill) bills.push(bill);
+      }
+      
+      // Small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 50));
+    } catch (e) {
+      // Fallback to basic info
+      const bill = transformBillSimple(b, congress);
+      if (bill) bills.push(bill);
+    }
+  }
+  
+  // Add remaining bills without sponsor details
+  for (const b of techBillsBasic.slice(50)) {
+    const bill = transformBillSimple(b, congress);
+    if (bill) bills.push(bill);
+  }
+  
+  console.log('[Bills API] Returning', bills.length, 'bills with', bills.filter(b => b.sponsorBioguideId).length, 'having sponsor info');
+  
+  return bills;
+}
+
+// Transform bill with full details including sponsors
+function transformBillWithDetails(apiBill: any, congress: number): Bill | null {
+  const billType = (apiBill.type || 'hr').toLowerCase();
+  const billNumber = apiBill.number;
+  
+  if (!billNumber) return null;
+  
+  const title = apiBill.title || '';
+  const { topics, matchedSnippet } = detectTopics(title, []);
+  
+  // Extract sponsor from detailed response
+  let sponsorBioguideId = '';
+  if (apiBill.sponsors && Array.isArray(apiBill.sponsors) && apiBill.sponsors.length > 0) {
+    sponsorBioguideId = apiBill.sponsors[0]?.bioguideId || '';
   }
 
-  return bills;
+  return {
+    billId: `${congress}-${billType}-${billNumber}`,
+    congress,
+    billType: billType as Bill['billType'],
+    billNumber: parseInt(billNumber),
+    title,
+    shortTitle: undefined,
+    summary: undefined,
+    policyArea: apiBill.policyArea?.name || '',
+    subjects: [],
+    introducedDate: apiBill.introducedDate || apiBill.latestAction?.actionDate || '',
+    latestActionDate: apiBill.latestAction?.actionDate || '',
+    latestAction: apiBill.latestAction?.text || '',
+    sponsorBioguideId,
+    cosponsorBioguideIds: [],
+    cosponsorCount: apiBill.cosponsors?.count || 0,
+    url: `https://www.congress.gov/bill/${congress}th-congress/${billType === 'hr' ? 'house-bill' : billType === 's' ? 'senate-bill' : billType}/${billNumber}`,
+    topics: topics.length > 0 ? topics : ['AI & Automation'],
+    matchedSubjects: [],
+    lastUpdated: apiBill.updateDate || new Date().toISOString()
+  };
 }
 
 // Keywords to identify tech-related bills
@@ -192,6 +273,19 @@ function transformBillSimple(apiBill: any, congress: number): Bill | null {
   
   const title = apiBill.title || '';
   const { topics, matchedSnippet } = detectTopics(title, []);
+  
+  // Extract sponsor info from API response
+  // The API returns sponsors in different formats depending on endpoint
+  let sponsorBioguideId = '';
+  const cosponsorBioguideIds: string[] = [];
+  
+  // Try to get sponsor from various API response formats
+  if (apiBill.sponsors && Array.isArray(apiBill.sponsors)) {
+    const primarySponsor = apiBill.sponsors.find((s: any) => s.isByRequest !== 'true') || apiBill.sponsors[0];
+    sponsorBioguideId = primarySponsor?.bioguideId || '';
+  } else if (apiBill.sponsor?.bioguideId) {
+    sponsorBioguideId = apiBill.sponsor.bioguideId;
+  }
 
   return {
     billId: `${congress}-${billType}-${billNumber}`,
@@ -203,12 +297,12 @@ function transformBillSimple(apiBill: any, congress: number): Bill | null {
     summary: undefined,
     policyArea: '',
     subjects: [],
-    introducedDate: apiBill.latestAction?.actionDate || '',
+    introducedDate: apiBill.latestAction?.actionDate || apiBill.introducedDate || '',
     latestActionDate: apiBill.latestAction?.actionDate || '',
     latestAction: apiBill.latestAction?.text || '',
-    sponsorBioguideId: '',
-    cosponsorBioguideIds: [],
-    cosponsorCount: 0,
+    sponsorBioguideId,
+    cosponsorBioguideIds,
+    cosponsorCount: apiBill.cosponsors || 0,
     url: `https://www.congress.gov/bill/${congress}th-congress/${billType === 'hr' ? 'house-bill' : billType === 's' ? 'senate-bill' : billType}/${billNumber}`,
     topics: topics.length > 0 ? topics : ['AI & Automation'], // Default topic for tech bills
     matchedSubjects: [],

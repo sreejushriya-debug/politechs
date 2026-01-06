@@ -100,9 +100,10 @@ export default function DashboardPage() {
       setFetchError(null);
       
       try {
-        const [membersRes, billsRes] = await Promise.all([
+        const [membersRes, billsRes, statementsRes] = await Promise.all([
           fetch('/api/capitol-pulse/members'),
-          fetch('/api/capitol-pulse/bills')
+          fetch('/api/capitol-pulse/bills'),
+          fetch('/api/capitol-pulse/statements')
         ]);
         
         if (!membersRes.ok) {
@@ -114,10 +115,11 @@ export default function DashboardPage() {
         
         const membersData = await membersRes.json();
         const billsData = await billsRes.json();
+        const statementsData = statementsRes.ok ? await statementsRes.json() : { statements: [] };
         
         setMembers(membersData.members || []);
         setBills(billsData.bills || []);
-        setStatements([]); // Statements integration pending
+        setStatements(statementsData.statements || []);
         setLastUpdated(membersData.lastUpdated || new Date().toISOString());
         setDataSource(membersData.source || 'Unknown');
         
@@ -130,21 +132,27 @@ export default function DashboardPage() {
           billsByTopic[topic.id] = billsList.filter((b: Bill) => b.topics.includes(topic.id)).length;
         }
         
+        const statementsList = statementsData.statements || [];
+        
         setCoverage({
           lastUpdated: new Date().toISOString(),
           members: {
             total: membersList.length,
             house: membersList.filter((m: CongressMember) => m.chamber === 'House').length,
             senate: membersList.filter((m: CongressMember) => m.chamber === 'Senate').length,
-            withStatements: 0,
-            withBills: 0
+            withStatements: new Set(statementsList.map((s: Statement) => s.bioguideId)).size,
+            withBills: new Set(billsList.map((b: Bill) => b.sponsorBioguideId)).size
           },
           bills: {
             total: billsList.length,
             byTopic: billsByTopic
           },
           votes: { total: 0, houseTotal: 0, senateTotal: 0 },
-          statements: { total: 0, congressionalRecord: 0, pressReleases: 0 }
+          statements: { 
+            total: statementsList.length, 
+            congressionalRecord: statementsList.filter((s: Statement) => s.sourceType === 'congressional_record').length, 
+            pressReleases: statementsList.filter((s: Statement) => s.sourceType === 'press_release').length 
+          }
         });
         
       } catch (error) {
