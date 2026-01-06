@@ -155,18 +155,16 @@ export default function BillsPage() {
                 
                 return (
                   <ScrollReveal key={bill.billId} animation="fade-up" delay={Math.min(i * 30, 150)}>
-                    <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-6 hover:border-white/10 transition-colors">
+                    <Link 
+                      href={`/capitol-pulse/bills/${bill.billId}`}
+                      className="block bg-navy-800/40 rounded-2xl border border-white/5 p-6 hover:border-accent-blue/30 transition-colors group"
+                    >
                       {/* Header Row */}
                       <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
                         <div>
-                          <a 
-                            href={bill.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-accent-blue hover:text-accent-blue/80 font-mono text-lg font-bold"
-                          >
+                          <span className="text-accent-blue group-hover:text-accent-blue/80 font-mono text-lg font-bold">
                             {bill.billType.toUpperCase()}.{bill.billNumber}
-                          </a>
+                          </span>
                           <span className="text-white/30 text-sm ml-3">
                             Introduced {new Date(bill.introducedDate).toLocaleDateString("en-US", {
                               year: "numeric",
@@ -183,7 +181,7 @@ export default function BillsPage() {
                       </div>
                       
                       {/* Title */}
-                      <h2 className="text-white font-display font-semibold text-xl mb-3">
+                      <h2 className="text-white font-display font-semibold text-xl mb-3 group-hover:text-accent-blue transition-colors">
                         {bill.title}
                       </h2>
                       
@@ -199,13 +197,12 @@ export default function BillsPage() {
                         {bill.topics.map(t => {
                           const topicInfo = techTopics.find(topic => topic.id === t);
                           return (
-                            <Link
+                            <span
                               key={t}
-                              href={`/capitol-pulse/topics/${encodeURIComponent(t)}`}
-                              className="px-3 py-1 rounded-full bg-accent-blue/10 text-accent-blue text-sm hover:bg-accent-blue/20 transition-colors"
+                              className="px-3 py-1 rounded-full bg-accent-blue/10 text-accent-blue text-sm"
                             >
                               {topicInfo?.icon} {t}
-                            </Link>
+                            </span>
                           );
                         })}
                       </div>
@@ -223,10 +220,7 @@ export default function BillsPage() {
                       {/* Footer */}
                       <div className="pt-4 border-t border-white/5 flex items-center justify-between flex-wrap gap-4">
                         {sponsor ? (
-                          <Link
-                            href={`/capitol-pulse/members/${sponsor.bioguideId}`}
-                            className="flex items-center gap-2 text-white/60 hover:text-accent-blue transition-colors"
-                          >
+                          <div className="flex items-center gap-2 text-white/60">
                             <span className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold ${
                               sponsor.party === "Democratic" ? "bg-blue-500" :
                               sponsor.party === "Republican" ? "bg-red-500" :
@@ -238,7 +232,7 @@ export default function BillsPage() {
                             <span className="text-white/30 text-xs">
                               ({sponsor.party.charAt(0)}-{sponsor.state})
                             </span>
-                          </Link>
+                          </div>
                         ) : (
                           <span className="text-white/40 text-sm">Sponsor: {bill.sponsorBioguideId}</span>
                         )}
@@ -249,17 +243,12 @@ export default function BillsPage() {
                               {bill.cosponsorCount} cosponsor{bill.cosponsorCount !== 1 ? 's' : ''}
                             </span>
                           )}
-                          <a
-                            href={bill.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-accent-blue hover:text-accent-blue/80 text-sm font-medium"
-                          >
-                            View on Congress.gov →
-                          </a>
+                          <span className="text-accent-blue group-hover:text-accent-blue/80 text-sm font-medium">
+                            View Details & Explainer →
+                          </span>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   </ScrollReveal>
                 );
               })}

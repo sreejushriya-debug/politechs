@@ -1,81 +1,136 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { techTopics } from "@/data/capitol-pulse";
-import { getStatements, getMembers } from "@/lib/capitol-pulse/data-store";
-import { Statement, CongressMember, TechTopic } from "@/lib/capitol-pulse/types";
+import { TechTopic } from "@/lib/capitol-pulse/types";
 import { ScrollReveal } from "@/components/ScrollAnimations";
+
+interface SearchResult {
+  id: string;
+  type: 'bill' | 'statement' | 'vote';
+  title: string;
+  date: string;
+  snippet: string;
+  topics: TechTopic[];
+  member?: { name: string; bioguideId: string; party: string; state: string };
+  sourceUrl: string;
+  sourceType?: string;
+  matchedTerms: string[];
+}
+
+interface DataSources {
+  bills: string;
+  statements: string;
+  votes: string;
+}
 
 function SearchContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // Parse URL params
+  const initialQuery = searchParams.get("q") || "";
   const initialTopic = searchParams.get("topic") || "";
+  const initialType = searchParams.get("type") || "all";
   
   const [loading, setLoading] = useState(true);
-  const [statements, setStatements] = useState<Statement[]>([]);
-  const [members, setMembers] = useState<CongressMember[]>([]);
-  const [lastUpdated, setLastUpdated] = useState<string>("");
-  const [dataSource, setDataSource] = useState<string>("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [dataSources, setDataSources] = useState<DataSources | null>(null);
 
-  const [query, setQuery] = useState("");
+  // Filter state
+  const [query, setQuery] = useState(initialQuery);
   const [topicFilter, setTopicFilter] = useState<TechTopic | "">(initialTopic as TechTopic | "");
-  const [toneFilter, setToneFilter] = useState<"Support" | "Concern" | "Neutral" | "">("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "bills" | "statements" | "votes">(initialType as any);
+  const [sourceTypeFilter, setSourceTypeFilter] = useState<"" | "press_release" | "congressional_record">("");
+  const [chamberFilter, setChamberFilter] = useState<"" | "House" | "Senate">("");
+  const [partyFilter, setPartyFilter] = useState<"" | "Democratic" | "Republican" | "Independent">("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [offset, setOffset] = useState(0);
+  const LIMIT = 20;
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [statementsData, membersData] = await Promise.all([
-          getStatements(),
-          getMembers()
-        ]);
-        setStatements(statementsData.statements);
-        setMembers(membersData.members);
-        setLastUpdated(statementsData.lastUpdated);
-        setDataSource(statementsData.source);
-      } catch (error) {
-        console.error("Failed to load data:", error);
-      } finally {
-        setLoading(false);
+  // Perform search
+  const doSearch = async (resetOffset = true) => {
+    setLoading(true);
+    const currentOffset = resetOffset ? 0 : offset;
+    if (resetOffset) setOffset(0);
+    
+    try {
+      const params = new URLSearchParams();
+      if (query) params.set('q', query);
+      if (topicFilter) params.set('topic', topicFilter);
+      if (typeFilter !== 'all') params.set('type', typeFilter);
+      if (sourceTypeFilter) params.set('sourceType', sourceTypeFilter);
+      if (chamberFilter) params.set('chamber', chamberFilter);
+      if (partyFilter) params.set('party', partyFilter);
+      if (dateFrom) params.set('dateFrom', dateFrom);
+      if (dateTo) params.set('dateTo', dateTo);
+      params.set('offset', String(currentOffset));
+      params.set('limit', String(LIMIT));
+      
+      console.log('[Search] Fetching:', `/api/capitol-pulse/search?${params.toString()}`);
+      const res = await fetch(`/api/capitol-pulse/search?${params.toString()}`);
+      const data = await res.json();
+      console.log('[Search] Results:', data.total, 'items');
+      
+      if (resetOffset) {
+        setResults(data.results || []);
+      } else {
+        setResults(prev => [...prev, ...(data.results || [])]);
       }
+      setTotal(data.total || 0);
+      setHasMore(data.hasMore || false);
+      setDataSources(data.dataSources || null);
+    } catch (error) {
+      console.error("Search failed:", error);
+      setResults([]);
+    } finally {
+      setLoading(false);
     }
-    loadData();
+  };
+
+  // Initial load
+  useEffect(() => {
+    doSearch(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filteredStatements = useMemo(() => {
-    return statements.filter(stmt => {
-      // Query search
-      if (query) {
-        const q = query.toLowerCase();
-        const matchesQuery = 
-          stmt.title.toLowerCase().includes(q) ||
-          stmt.excerpt.toLowerCase().includes(q) ||
-          stmt.keywords.some(k => k.toLowerCase().includes(q)) ||
-          stmt.entities.some(e => e.toLowerCase().includes(q));
-        if (!matchesQuery) return false;
-      }
-      
-      // Topic filter
-      if (topicFilter && !stmt.topics.includes(topicFilter)) return false;
-      
-      // Tone filter
-      if (toneFilter && stmt.tone !== toneFilter) return false;
-      
-      // Date filters
-      if (dateFrom && new Date(stmt.publishedAt) < new Date(dateFrom)) return false;
-      if (dateTo && new Date(stmt.publishedAt) > new Date(dateTo)) return false;
-      
-      return true;
-    }).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-  }, [query, topicFilter, toneFilter, dateFrom, dateTo, statements]);
+  // Update URL when searching
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (topicFilter) params.set('topic', topicFilter);
+    if (typeFilter !== 'all') params.set('type', typeFilter);
+    router.push(`/capitol-pulse/search?${params.toString()}`);
+    doSearch(true);
+  };
 
-  const getMember = (bioguideId: string) => members.find(m => m.bioguideId === bioguideId);
+  const clearFilters = () => {
+    setQuery("");
+    setTopicFilter("");
+    setTypeFilter("all");
+    setSourceTypeFilter("");
+    setChamberFilter("");
+    setPartyFilter("");
+    setDateFrom("");
+    setDateTo("");
+    router.push('/capitol-pulse/search');
+  };
 
-  const highlightMatch = (text: string, searchQuery: string): React.ReactNode => {
-    if (!searchQuery) return text;
-    const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const loadMore = () => {
+    setOffset(prev => prev + LIMIT);
+    doSearch(false);
+  };
+
+  const highlightMatch = (text: string, terms: string[]): React.ReactNode => {
+    if (!terms.length) return text;
+    const pattern = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+    const regex = new RegExp(`(${pattern})`, 'gi');
     const parts = text.split(regex);
     return parts.map((part, i) => 
       regex.test(part) ? (
@@ -86,11 +141,51 @@ function SearchContent() {
     );
   };
 
-  const formattedDate = new Date(lastUpdated).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric"
-  });
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "Date unavailable";
+    try {
+      return new Date(dateStr).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+    } catch {
+      return "Date unavailable";
+    }
+  };
+
+  const getResultLink = (result: SearchResult) => {
+    switch (result.type) {
+      case 'bill':
+        return `/capitol-pulse/bills/${result.id}`;
+      case 'statement':
+        return `/capitol-pulse/statements/${result.id}`;
+      case 'vote':
+        return `/capitol-pulse/votes/${result.id}`;
+      default:
+        return result.sourceUrl;
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'bill': return '📜';
+      case 'statement': return '💬';
+      case 'vote': return '🗳️';
+      default: return '📄';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'bill': return 'Bill';
+      case 'statement': return 'Statement';
+      case 'vote': return 'Vote';
+      default: return 'Record';
+    }
+  };
+
+  const hasFilters = query || topicFilter || typeFilter !== 'all' || sourceTypeFilter || chamberFilter || partyFilter || dateFrom || dateTo;
 
   return (
     <div className="pt-28 pb-24 min-h-screen">
@@ -105,288 +200,352 @@ function SearchContent() {
               Evidence Explorer
             </h1>
             <p className="text-white/50 max-w-2xl">
-              Search through official Congressional statements on technology policy. 
-              Every result links to its original source.
+              Search through Congressional bills, floor statements, press releases, and votes on technology policy.
+              Every result links to its original official source.
             </p>
           </ScrollReveal>
         </header>
 
-        {/* Data Status */}
-        <ScrollReveal animation="fade-up">
-          <div className={`rounded-xl border p-4 mb-8 ${
-            statements.length > 0 ? "bg-emerald-500/10 border-emerald-500/20" : "bg-amber-500/10 border-amber-500/20"
-          }`}>
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-2.5 h-2.5 rounded-full ${statements.length > 0 ? "bg-emerald-500" : "bg-amber-500"}`} />
-                <span className={`text-sm font-medium ${statements.length > 0 ? "text-emerald-400" : "text-amber-400"}`}>
-                  {dataSource}
-                </span>
+        {/* Data Source Status */}
+        {dataSources && (
+          <ScrollReveal animation="fade-up">
+            <div className="grid sm:grid-cols-3 gap-4 mb-8">
+              <div className={`rounded-xl border p-4 ${
+                dataSources.bills.includes('API') ? "bg-emerald-500/10 border-emerald-500/20" : "bg-amber-500/10 border-amber-500/20"
+              }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">📜</span>
+                  <span className="text-white/80 text-sm font-medium">Bills</span>
+                </div>
+                <p className="text-xs text-white/50">{dataSources.bills}</p>
               </div>
-              <span className="text-white/40 text-sm">
-                {statements.length} statements indexed • Updated: {formattedDate}
-              </span>
+              <div className={`rounded-xl border p-4 ${
+                dataSources.statements.includes('Pending') ? "bg-amber-500/10 border-amber-500/20" : "bg-emerald-500/10 border-emerald-500/20"
+              }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">💬</span>
+                  <span className="text-white/80 text-sm font-medium">Statements</span>
+                </div>
+                <p className="text-xs text-white/50">{dataSources.statements}</p>
+              </div>
+              <div className={`rounded-xl border p-4 ${
+                dataSources.votes.includes('Pending') ? "bg-amber-500/10 border-amber-500/20" : "bg-emerald-500/10 border-emerald-500/20"
+              }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">🗳️</span>
+                  <span className="text-white/80 text-sm font-medium">Votes</span>
+                </div>
+                <p className="text-xs text-white/50">{dataSources.votes}</p>
+              </div>
             </div>
-          </div>
+          </ScrollReveal>
+        )}
+
+        {/* Search & Filters */}
+        <ScrollReveal animation="fade-up">
+          <form onSubmit={handleSearch} className="bg-navy-800/40 rounded-2xl border border-white/5 p-6 mb-8">
+            {/* Main Search */}
+            <div className="mb-6">
+              <label className="text-white/50 text-sm mb-2 block">Search Keywords</label>
+              <div className="flex gap-4">
+                <input
+                  type="text"
+                  placeholder="Search by keyword, bill number, member name..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white text-lg placeholder:text-white/30 focus:outline-none focus:border-accent-blue/50"
+                />
+                <button
+                  type="submit"
+                  className="px-8 py-4 rounded-xl bg-accent-blue text-white font-medium hover:bg-accent-blue/80 transition-colors"
+                >
+                  Search
+                </button>
+              </div>
+            </div>
+            
+            {/* Filter Row 1: Type & Topic */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className="text-white/50 text-sm mb-2 block">Content Type</label>
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value as any)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-blue/50"
+                >
+                  <option value="all">All Types</option>
+                  <option value="bills">📜 Bills Only</option>
+                  <option value="statements">💬 Statements Only</option>
+                  <option value="votes">🗳️ Votes Only</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="text-white/50 text-sm mb-2 block">Topic</label>
+                <select
+                  value={topicFilter}
+                  onChange={(e) => setTopicFilter(e.target.value as TechTopic | "")}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-blue/50"
+                >
+                  <option value="">All Topics</option>
+                  {techTopics.map(t => (
+                    <option key={t.id} value={t.id}>{t.icon} {t.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="text-white/50 text-sm mb-2 block">From Date</label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-blue/50"
+                />
+              </div>
+              
+              <div>
+                <label className="text-white/50 text-sm mb-2 block">To Date</label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-blue/50"
+                />
+              </div>
+            </div>
+
+            {/* Filter Row 2: Chamber, Party, Source Type */}
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div>
+                <label className="text-white/50 text-sm mb-2 block">Chamber</label>
+                <select
+                  value={chamberFilter}
+                  onChange={(e) => setChamberFilter(e.target.value as any)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-blue/50"
+                >
+                  <option value="">Both Chambers</option>
+                  <option value="House">House</option>
+                  <option value="Senate">Senate</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="text-white/50 text-sm mb-2 block">Party</label>
+                <select
+                  value={partyFilter}
+                  onChange={(e) => setPartyFilter(e.target.value as any)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-blue/50"
+                >
+                  <option value="">All Parties</option>
+                  <option value="Democratic">Democratic</option>
+                  <option value="Republican">Republican</option>
+                  <option value="Independent">Independent</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="text-white/50 text-sm mb-2 block">Statement Source</label>
+                <select
+                  value={sourceTypeFilter}
+                  onChange={(e) => setSourceTypeFilter(e.target.value as any)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-blue/50"
+                  disabled={typeFilter !== 'statements' && typeFilter !== 'all'}
+                >
+                  <option value="">All Sources</option>
+                  <option value="press_release">Press Releases Only</option>
+                  <option value="congressional_record">Official Record Only</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* Clear Filters */}
+            {hasFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-4 text-accent-blue hover:text-accent-blue/80 text-sm"
+              >
+                Clear all filters
+              </button>
+            )}
+          </form>
         </ScrollReveal>
 
-        {loading ? (
+        {/* Results Count */}
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-white/40 text-sm">
+            {loading ? "Searching..." : `Found ${total} result${total !== 1 ? "s" : ""}`}
+          </p>
+          {!loading && results.length > 0 && (
+            <p className="text-white/30 text-xs">
+              Showing {results.length} of {total}
+            </p>
+          )}
+        </div>
+
+        {/* Loading State */}
+        {loading && results.length === 0 && (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent-blue border-t-transparent" />
           </div>
-        ) : statements.length === 0 ? (
+        )}
+
+        {/* No Results */}
+        {!loading && results.length === 0 && (
           <ScrollReveal animation="fade-up">
             <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-12 text-center">
               <span className="text-6xl mb-6 block">🔍</span>
               <h2 className="text-2xl font-display font-bold text-white mb-4">
-                No Statement Data Available
+                No Results Found
               </h2>
               <p className="text-white/50 max-w-lg mx-auto mb-6">
-                Statement data from the Congressional Record requires additional API integration.
-                This feature is coming soon.
+                {hasFilters 
+                  ? "No records match your current filters. Try broadening your search or removing some filters."
+                  : "Enter a search term or select filters to find Congressional records on tech policy."}
               </p>
-              <div className="bg-navy-900/50 rounded-xl p-6 max-w-md mx-auto text-left">
-                <p className="text-white/70 text-sm mb-3">Sources we plan to support:</p>
-                <ul className="text-white/50 text-sm space-y-2">
-                  <li className="flex items-center gap-2">
-                    <span className="text-accent-blue">•</span>
-                    Congressional Record (floor speeches)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-accent-blue">•</span>
-                    Official member press releases (.gov)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-accent-blue">•</span>
-                    Committee hearing transcripts
-                  </li>
-                </ul>
+              <div className="flex flex-wrap justify-center gap-4">
+                <button
+                  onClick={() => setTopicFilter("AI & Automation")}
+                  className="px-4 py-2 rounded-full bg-white/5 text-white/60 hover:bg-white/10 transition-colors"
+                >
+                  Browse AI Bills
+                </button>
+                <button
+                  onClick={() => setTopicFilter("Cybersecurity")}
+                  className="px-4 py-2 rounded-full bg-white/5 text-white/60 hover:bg-white/10 transition-colors"
+                >
+                  Browse Cybersecurity
+                </button>
+                <button
+                  onClick={() => setTopicFilter("Data Privacy & Surveillance")}
+                  className="px-4 py-2 rounded-full bg-white/5 text-white/60 hover:bg-white/10 transition-colors"
+                >
+                  Browse Privacy
+                </button>
               </div>
-              <Link 
-                href="/capitol-pulse/methodology"
-                className="inline-block mt-8 text-accent-blue hover:text-accent-blue/80 text-sm"
-              >
-                Learn more about our data sources →
-              </Link>
             </div>
           </ScrollReveal>
-        ) : (
-          <>
-            {/* Search & Filters */}
-            <ScrollReveal animation="fade-up">
-              <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-6 mb-8">
-                {/* Main Search */}
-                <div className="mb-6">
-                  <label className="text-white/50 text-sm mb-2 block">Search Keywords</label>
-                  <input
-                    type="text"
-                    placeholder="Search by keyword, entity, or phrase..."
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white text-lg placeholder:text-white/30 focus:outline-none focus:border-accent-blue/50"
-                  />
+        )}
+
+        {/* Results */}
+        <div className="space-y-4">
+          {results.map((result, i) => (
+            <ScrollReveal key={`${result.type}-${result.id}`} animation="fade-up" delay={Math.min(i * 30, 150)}>
+              <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-6 hover:border-white/10 transition-colors">
+                {/* Header */}
+                <div className="flex flex-wrap items-center gap-3 mb-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    result.type === "bill" ? "bg-purple-500/20 text-purple-400" :
+                    result.type === "statement" ? "bg-blue-500/20 text-blue-400" :
+                    "bg-emerald-500/20 text-emerald-400"
+                  }`}>
+                    {getTypeIcon(result.type)} {getTypeLabel(result.type)}
+                  </span>
+                  
+                  {result.sourceType && (
+                    <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/50 text-xs">
+                      {result.sourceType === 'press_release' ? 'Press Release' : 'Official Record'}
+                    </span>
+                  )}
+                  
+                  {result.topics.slice(0, 2).map(t => {
+                    const topic = techTopics.find(tp => tp.id === t);
+                    return (
+                      <Link
+                        key={t}
+                        href={`/capitol-pulse/topics/${encodeURIComponent(t)}`}
+                        className="px-2 py-0.5 rounded-full bg-accent-blue/10 text-accent-blue text-xs hover:bg-accent-blue/20 transition-colors"
+                      >
+                        {topic?.icon} {t}
+                      </Link>
+                    );
+                  })}
+                  
+                  <span className="text-white/30 text-sm ml-auto">
+                    {formatDate(result.date)}
+                  </span>
                 </div>
                 
-                {/* Filter Row */}
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="text-white/50 text-sm mb-2 block">Topic</label>
-                    <select
-                      value={topicFilter}
-                      onChange={(e) => setTopicFilter(e.target.value as TechTopic | "")}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-blue/50"
+                {/* Title */}
+                <Link 
+                  href={getResultLink(result)}
+                  className="block group"
+                >
+                  <h3 className="text-white font-display font-semibold text-lg mb-3 group-hover:text-accent-blue transition-colors">
+                    {highlightMatch(result.title, result.matchedTerms)}
+                  </h3>
+                </Link>
+                
+                {/* Snippet */}
+                <p className="text-white/60 text-sm leading-relaxed mb-4">
+                  {highlightMatch(result.snippet, result.matchedTerms)}
+                </p>
+                
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                  {result.member ? (
+                    <Link
+                      href={`/capitol-pulse/members/${result.member.bioguideId}`}
+                      className="flex items-center gap-2 text-white/60 hover:text-accent-blue transition-colors"
                     >
-                      <option value="">All Topics</option>
-                      {techTopics.map(t => (
-                        <option key={t.id} value={t.id}>{t.icon} {t.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${
+                        result.member.party === "Democratic" ? "bg-blue-500" :
+                        result.member.party === "Republican" ? "bg-red-500" :
+                        "bg-purple-500"
+                      }`}>
+                        {result.member.name.split(' ').map(n => n[0]).join('')}
+                      </span>
+                      <span className="text-sm">{result.member.name}</span>
+                      <span className="text-white/30 text-xs">
+                        ({result.member.party?.charAt(0)}-{result.member.state})
+                      </span>
+                    </Link>
+                  ) : (
+                    <span className="text-white/40 text-sm">
+                      {result.type === 'bill' ? 'Legislative Record' : 'Congressional Record'}
+                    </span>
+                  )}
                   
-                  <div>
-                    <label className="text-white/50 text-sm mb-2 block">Tone</label>
-                    <select
-                      value={toneFilter}
-                      onChange={(e) => setToneFilter(e.target.value as "Support" | "Concern" | "Neutral" | "")}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-blue/50"
+                  <div className="flex items-center gap-4">
+                    <Link
+                      href={getResultLink(result)}
+                      className="text-accent-blue hover:text-accent-blue/80 text-sm transition-colors"
                     >
-                      <option value="">All Tones</option>
-                      <option value="Support">Support</option>
-                      <option value="Concern">Concern</option>
-                      <option value="Neutral">Neutral</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-white/50 text-sm mb-2 block">From Date</label>
-                    <input
-                      type="date"
-                      value={dateFrom}
-                      onChange={(e) => setDateFrom(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-blue/50"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-white/50 text-sm mb-2 block">To Date</label>
-                    <input
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-blue/50"
-                    />
+                      View Details →
+                    </Link>
+                    <a
+                      href={result.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/40 hover:text-white/60 text-sm transition-colors"
+                    >
+                      Official Source ↗
+                    </a>
                   </div>
                 </div>
-                
-                {/* Clear Filters */}
-                {(query || topicFilter || toneFilter || dateFrom || dateTo) && (
-                  <button
-                    onClick={() => {
-                      setQuery("");
-                      setTopicFilter("");
-                      setToneFilter("");
-                      setDateFrom("");
-                      setDateTo("");
-                    }}
-                    className="mt-4 text-accent-blue hover:text-accent-blue/80 text-sm"
-                  >
-                    Clear all filters
-                  </button>
-                )}
               </div>
             </ScrollReveal>
+          ))}
+        </div>
 
-            {/* Results Count */}
-            <p className="text-white/40 text-sm mb-6">
-              Found {filteredStatements.length} statement{filteredStatements.length !== 1 ? "s" : ""}
-            </p>
+        {/* Load More */}
+        {hasMore && !loading && (
+          <div className="text-center mt-8">
+            <button
+              onClick={loadMore}
+              className="px-8 py-3 rounded-full bg-white/5 text-white hover:bg-white/10 transition-colors"
+            >
+              Load More Results
+            </button>
+          </div>
+        )}
 
-            {/* Results */}
-            <div className="space-y-4">
-              {filteredStatements.map((stmt, i) => {
-                const member = getMember(stmt.bioguideId);
-                
-                return (
-                  <ScrollReveal key={stmt.id} animation="fade-up" delay={Math.min(i * 30, 150)}>
-                    <div className="bg-navy-800/40 rounded-2xl border border-white/5 p-6 hover:border-white/10 transition-colors">
-                      {/* Header */}
-                      <div className="flex flex-wrap items-center gap-3 mb-4">
-                        {stmt.tone && (
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            stmt.tone === "Support" ? "bg-emerald-500/20 text-emerald-400" :
-                            stmt.tone === "Concern" ? "bg-amber-500/20 text-amber-400" :
-                            "bg-white/10 text-white/60"
-                          }`}>
-                            {stmt.tone} {stmt.toneConfidence && `(${stmt.toneConfidence}% confidence)`}
-                          </span>
-                        )}
-                        
-                        {stmt.topics.map(t => (
-                          <Link
-                            key={t}
-                            href={`/capitol-pulse/topics/${encodeURIComponent(t)}`}
-                            className="px-2 py-0.5 rounded-full bg-accent-blue/10 text-accent-blue text-xs hover:bg-accent-blue/20 transition-colors"
-                          >
-                            {techTopics.find(topic => topic.id === t)?.icon} {t}
-                          </Link>
-                        ))}
-                        
-                        <span className="text-white/30 text-sm ml-auto">
-                          {new Date(stmt.publishedAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric"
-                          })}
-                        </span>
-                      </div>
-                      
-                      {/* Title */}
-                      <h3 className="text-white font-display font-semibold text-lg mb-3">
-                        {highlightMatch(stmt.title, query)}
-                      </h3>
-                      
-                      {/* Excerpt */}
-                      <blockquote className="text-white/60 text-sm leading-relaxed mb-4 pl-4 border-l-2 border-accent-blue/30">
-                        "{highlightMatch(stmt.excerpt, query)}"
-                      </blockquote>
-                      
-                      {/* Matched Snippet (transparency) */}
-                      {stmt.matchedSnippet && (
-                        <div className="bg-white/5 rounded-xl p-4 mb-4">
-                          <p className="text-white/40 text-xs mb-2 font-medium">Why this was tagged:</p>
-                          <p className="text-white/60 text-sm italic">
-                            {stmt.matchedSnippet}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {/* Keywords & Entities */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {stmt.keywords.map(k => (
-                          <span 
-                            key={k} 
-                            className="text-white/40 text-xs cursor-pointer hover:text-accent-blue transition-colors"
-                            onClick={() => setQuery(k)}
-                          >
-                            #{k}
-                          </span>
-                        ))}
-                        {stmt.entities.map(e => (
-                          <span 
-                            key={e} 
-                            className="px-2 py-0.5 rounded bg-white/5 text-white/50 text-xs cursor-pointer hover:text-white transition-colors"
-                            onClick={() => setQuery(e)}
-                          >
-                            {e}
-                          </span>
-                        ))}
-                      </div>
-                      
-                      {/* Footer */}
-                      <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                        {member ? (
-                          <Link
-                            href={`/capitol-pulse/members/${member.bioguideId}`}
-                            className="flex items-center gap-2 text-white/60 hover:text-accent-blue transition-colors"
-                          >
-                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${
-                              member.party === "Democratic" ? "bg-blue-500" :
-                              member.party === "Republican" ? "bg-red-500" :
-                              "bg-purple-500"
-                            }`}>
-                              {member.firstName[0]}{member.lastName[0]}
-                            </span>
-                            <span className="text-sm">{member.name}</span>
-                            <span className="text-white/30 text-xs">
-                              ({member.party.charAt(0)}-{member.state})
-                            </span>
-                          </Link>
-                        ) : (
-                          <span className="text-white/40 text-sm">Speaker: {stmt.bioguideId}</span>
-                        )}
-                        
-                        <a
-                          href={stmt.sourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-accent-blue hover:text-accent-blue/80 text-sm transition-colors"
-                        >
-                          View Original Source →
-                        </a>
-                      </div>
-                    </div>
-                  </ScrollReveal>
-                );
-              })}
-            </div>
-
-            {filteredStatements.length === 0 && (
-              <div className="text-center py-16 bg-navy-800/20 rounded-2xl border border-white/5">
-                <p className="text-white/50 text-lg mb-2">No statements match your search.</p>
-                <p className="text-white/30 text-sm">Try adjusting your filters or search terms.</p>
-              </div>
-            )}
-          </>
+        {/* Loading More Indicator */}
+        {loading && results.length > 0 && (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-accent-blue border-t-transparent" />
+          </div>
         )}
       </div>
     </div>

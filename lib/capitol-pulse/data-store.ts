@@ -148,15 +148,39 @@ export async function getStatements(): Promise<{ statements: Statement[]; lastUp
     };
   }
 
-  // Congressional Record integration would go here
-  // This requires the Government Publishing Office API or congress.gov
-  // For now, return empty with clear messaging
-  
-  return {
-    statements: [],
-    lastUpdated: new Date().toISOString(),
-    source: 'Congressional Record integration pending'
-  };
+  // Fetch real statements from Congressional Record
+  try {
+    const { getCongressionalRecordStatements } = await import('./congressional-record');
+    const statements = await getCongressionalRecordStatements();
+    
+    if (statements.length > 0) {
+      statementsCache = {
+        data: statements,
+        lastUpdated: new Date().toISOString(),
+        source: 'Congressional Record (Congress.gov)'
+      };
+      
+      return {
+        statements,
+        lastUpdated: new Date().toISOString(),
+        source: 'Congressional Record (Congress.gov)'
+      };
+    }
+    
+    // If no statements from CR, return empty with clear message
+    return {
+      statements: [],
+      lastUpdated: new Date().toISOString(),
+      source: 'No tech-related Congressional Record entries found'
+    };
+  } catch (error) {
+    console.error('Failed to fetch Congressional Record:', error);
+    return {
+      statements: [],
+      lastUpdated: new Date().toISOString(),
+      source: 'Congressional Record fetch failed - check API key'
+    };
+  }
 }
 
 // Get votes
