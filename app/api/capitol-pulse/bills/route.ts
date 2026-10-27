@@ -1,41 +1,20 @@
-// Server-side API route for fetching tech bills
-// This keeps the Congress.gov API key secure on the server
+// Public JSON export of the Capitol Pulse tech-bill dataset.
 
-import { NextResponse } from 'next/server';
-import { fetchTechBills, checkApiHealth } from '@/lib/capitol-pulse/congress-api';
+import { NextResponse } from "next/server";
+import { getTechBills } from "@/lib/capitol-pulse/congress";
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 3600; // Cache for 1 hour
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function GET() {
   try {
-    const apiHealth = await checkApiHealth();
-    
-    if (!apiHealth.available) {
-      return NextResponse.json({
-        bills: [],
-        lastUpdated: new Date().toISOString(),
-        source: apiHealth.message || 'API not available',
-        error: true
-      });
-    }
-
-    const bills = await fetchTechBills();
-    
-    return NextResponse.json({
-      bills,
-      lastUpdated: new Date().toISOString(),
-      source: 'Congress.gov API',
-      error: false
-    });
+    const data = await getTechBills();
+    return NextResponse.json(
+      { source: "Congress.gov API", ...data },
+      { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" } }
+    );
   } catch (error) {
-    console.error('Failed to fetch bills:', error);
-    return NextResponse.json({
-      bills: [],
-      lastUpdated: new Date().toISOString(),
-      source: 'Error fetching data',
-      error: true
-    }, { status: 500 });
+    console.error("[capitol-pulse] bills export failed:", error);
+    return NextResponse.json({ error: "Could not reach Congress.gov" }, { status: 503 });
   }
 }
-
